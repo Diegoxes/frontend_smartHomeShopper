@@ -6,7 +6,11 @@ import type {
 } from '@/types'
 
 // ── axios instance ────────────────────────────────────────────────────────────
-const http = axios.create({ baseURL: '/api' })
+// Dev: `vite` usa proxy → base `/api`. Prod (Railway, etc.): define VITE_API_BASE_URL en build, ej. https://tu-backend.up.railway.app/api
+const apiBase =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || '/api'
+
+const http = axios.create({ baseURL: apiBase })
 
 http.interceptors.request.use(cfg => {
   const token = localStorage.getItem('shs_token')
