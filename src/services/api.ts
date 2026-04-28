@@ -7,11 +7,10 @@ import type {
 
 /**
  * Mismo path que `server.servlet.context-path` del backend Spring.
- * Todas las peticiones HTTP llevan este prefijo.
  */
 export const API_PREFIX = '/api'
 
-/** Origen del backend. En dev: '' (mismo host que Vite; el proxy atiende /api/*). En prod: URL del API sin /api final. */
+/** Host del API sin path. Dev: '' (peticiones relativas al origen de Vite). Prod: dominio del backend. */
 function resolveOrigin(): string {
   if (import.meta.env.DEV) return ''
   const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
@@ -19,7 +18,11 @@ function resolveOrigin(): string {
   return raw.replace(/\/$/, '').replace(/\/api$/i, '')
 }
 
-const http = axios.create({ baseURL: resolveOrigin() })
+/**
+ * baseURL de axios: en prod `https://tu-api.com/api`; en dev `/api` (proxy Vite).
+ * Rutas deben ir SIN barra inicial (p. ej. `auth/login`) para que combineURLs no pierda el /api.
+ */
+const http = axios.create({ baseURL: `${resolveOrigin()}${API_PREFIX}` })
 
 http.interceptors.request.use(cfg => {
   const token = localStorage.getItem('shs_token')
@@ -38,26 +41,24 @@ http.interceptors.response.use(
   }
 )
 
-// Rutas relativas al origen: siempre incluyen API_PREFIX ( /api/auth/..., /api/products/... )
-
 // ── auth ──────────────────────────────────────────────────────────────────────
 export const authService = {
-  login:    (data: LoginRequest):    Promise<AuthResponse> => http.post(`${API_PREFIX}/auth/login`,    data).then(r => r.data),
-  register: (data: RegisterRequest): Promise<AuthResponse> => http.post(`${API_PREFIX}/auth/register`, data).then(r => r.data),
+  login:    (data: LoginRequest):    Promise<AuthResponse> => http.post('auth/login',    data).then(r => r.data),
+  register: (data: RegisterRequest): Promise<AuthResponse> => http.post('auth/register', data).then(r => r.data),
 }
 
 // ── dashboard ─────────────────────────────────────────────────────────────────
 export const dashboardService = {
-  get: (): Promise<Dashboard> => http.get(`${API_PREFIX}/dashboard`).then(r => r.data),
+  get: (): Promise<Dashboard> => http.get('dashboard').then(r => r.data),
 }
 
 // ── products ──────────────────────────────────────────────────────────────────
 export const productService = {
-  getAll:  ():                                Promise<Product[]> => http.get(`${API_PREFIX}/products`).then(r => r.data),
-  getById: (id: string):                      Promise<Product>   => http.get(`${API_PREFIX}/products/${id}`).then(r => r.data),
-  create:  (data: CreateProductRequest):      Promise<Product>   => http.post(`${API_PREFIX}/products`, data).then(r => r.data),
-  update:  (id: string, data: UpdateProductRequest): Promise<Product> => http.patch(`${API_PREFIX}/products/${id}`, data).then(r => r.data),
-  delete:  (id: string):                      Promise<void>      => http.delete(`${API_PREFIX}/products/${id}`).then(() => undefined),
-  consume: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`${API_PREFIX}/products/${id}/consume`, data).then(r => r.data),
-  restock: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`${API_PREFIX}/products/${id}/restock`, data).then(r => r.data),
+  getAll:  ():                                Promise<Product[]> => http.get('products').then(r => r.data),
+  getById: (id: string):                      Promise<Product>   => http.get(`products/${id}`).then(r => r.data),
+  create:  (data: CreateProductRequest):      Promise<Product>   => http.post('products', data).then(r => r.data),
+  update:  (id: string, data: UpdateProductRequest): Promise<Product> => http.patch(`products/${id}`, data).then(r => r.data),
+  delete:  (id: string):                      Promise<void>      => http.delete(`products/${id}`).then(() => undefined),
+  consume: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`products/${id}/consume`, data).then(r => r.data),
+  restock: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`products/${id}/restock`, data).then(r => r.data),
 }
