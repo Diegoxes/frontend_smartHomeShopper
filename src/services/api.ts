@@ -3,6 +3,7 @@ import type {
   LoginRequest, RegisterRequest, AuthResponse,
   CreateProductRequest, UpdateProductRequest, AdjustRequest,
   Product, Dashboard,
+  RbacMatrixResponse, RoleModuleCellDto, AdminUserRowDto, AdminCreateUserRequest,
 } from '@/types'
 
 /**
@@ -61,4 +62,18 @@ export const productService = {
   delete:  (id: string):                      Promise<void>      => http.delete(`products/${id}`).then(() => undefined),
   consume: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`products/${id}/consume`, data).then(r => r.data),
   restock: (id: string, data: AdjustRequest): Promise<Product>   => http.post(`products/${id}/restock`, data).then(r => r.data),
+}
+
+// ── admin (solo OWNER en backend) ─────────────────────────────────────────────
+export const adminService = {
+  getRbac: (): Promise<RbacMatrixResponse> =>
+    http.get('admin/rbac').then(r => r.data),
+  updatePermissions: (cells: RoleModuleCellDto[]): Promise<void> =>
+    http.put('admin/rbac/permissions', { cells }).then(() => undefined),
+  listUsers: (): Promise<AdminUserRowDto[]> =>
+    http.get('admin/users').then(r => r.data),
+  createUser: (data: AdminCreateUserRequest): Promise<AdminUserRowDto> =>
+    http.post('admin/users', data).then(r => r.data),
+  updateUserRole: (userId: string, roleId: number): Promise<void> =>
+    http.patch(`admin/users/${userId}/role`, { roleId }).then(() => undefined),
 }

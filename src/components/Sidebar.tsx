@@ -1,8 +1,8 @@
+import { useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import type { AppPage } from '@/types'
 
-type Page = 'dashboard' | 'inventory' | 'alerts' | 'stats' | 'whatsapp'
-
-const NAV: { key: Page; label: string; icon: string }[] = [
+const BASE_NAV: { key: AppPage; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Dashboard',    icon: '🏠' },
   { key: 'inventory', label: 'Inventario',   icon: '📦' },
   { key: 'alerts',    label: 'Alertas',      icon: '⚠️' },
@@ -11,12 +11,19 @@ const NAV: { key: Page; label: string; icon: string }[] = [
 ]
 
 interface Props {
-  active: Page
-  onNav: (page: Page) => void
+  active: AppPage
+  onNav: (page: AppPage) => void
 }
 
 export default function Sidebar({ active, onNav }: Props) {
   const { user, logout } = useAuth()
+
+  const navItems = useMemo(() => {
+    if (user?.role === 'OWNER') {
+      return [...BASE_NAV, { key: 'admin' as const, label: 'Administración', icon: '⚙️' }]
+    }
+    return BASE_NAV
+  }, [user?.role])
 
   return (
     <aside className="w-56 min-h-screen bg-white border-r border-gray-100 flex flex-col py-5 shrink-0">
@@ -33,7 +40,7 @@ export default function Sidebar({ active, onNav }: Props) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 pt-2 space-y-0.5">
-        {NAV.map(({ key, label, icon }) => (
+        {navItems.map(({ key, label, icon }) => (
           <button
             key={key}
             onClick={() => onNav(key)}

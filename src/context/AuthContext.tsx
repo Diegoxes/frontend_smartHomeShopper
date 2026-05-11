@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import type { AuthUser, AuthResponse } from '@/types'
+import type { AuthUser, AuthResponse, UserRole } from '@/types'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -15,14 +15,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('shs_token')
     const stored = localStorage.getItem('shs_user')
     if (token && stored) {
-      try { return JSON.parse(stored) } catch { return null }
+      try {
+        const parsed = JSON.parse(stored) as Partial<AuthUser> & Record<string, unknown>
+        const role = (parsed.role as UserRole | undefined) ?? 'MEMBER'
+        return { id: parsed.id!, name: parsed.name!, email: parsed.email!, role }
+      } catch {
+        return null
+      }
     }
     return null
   })
 
   const login = useCallback((res: AuthResponse) => {
     localStorage.setItem('shs_token', res.token)
-    const u: AuthUser = { id: res.userId, name: res.name, email: res.email }
+    const u: AuthUser = { id: res.userId, name: res.name, email: res.email, role: res.role }
     localStorage.setItem('shs_user', JSON.stringify(u))
     setUser(u)
   }, [])

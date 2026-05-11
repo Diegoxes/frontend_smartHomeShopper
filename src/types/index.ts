@@ -1,4 +1,6 @@
 // ── Auth ──────────────────────────────────────────────────────────────────────
+export type UserRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
+
 export interface LoginRequest {
   email: string
   password: string
@@ -16,12 +18,60 @@ export interface AuthResponse {
   userId: string
   name: string
   email: string
+  role: UserRole
 }
 
 export interface AuthUser {
   id: string
   name: string
   email: string
+  role: UserRole
+}
+
+export type AppPage = 'dashboard' | 'inventory' | 'alerts' | 'stats' | 'whatsapp' | 'admin'
+
+// ── Admin (OWNER) ─────────────────────────────────────────────────────────────
+export interface AdminRoleDto {
+  id: number
+  name: string
+}
+
+export interface AdminModuleDto {
+  id: number
+  name: string
+  key: string
+}
+
+export interface RoleModuleCellDto {
+  roleId: number
+  moduleId: number
+  canCreate: boolean
+  canRead: boolean
+  canUpdate: boolean
+  canDelete: boolean
+}
+
+export interface RbacMatrixResponse {
+  roles: AdminRoleDto[]
+  modules: AdminModuleDto[]
+  permissions: RoleModuleCellDto[]
+}
+
+export interface AdminUserRowDto {
+  id: string
+  email: string
+  name: string
+  whatsappNumber?: string | null
+  roleId: number | null
+  roleName: string | null
+}
+
+export interface AdminCreateUserRequest {
+  email: string
+  password: string
+  name: string
+  roleId: number
+  whatsappNumber?: string
 }
 
 // ── Product ───────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Sidebar       from '@/components/Sidebar'
 import AuthPage      from '@/pages/AuthPage'
@@ -7,20 +7,27 @@ import InventoryPage from '@/pages/InventoryPage'
 import AlertsPage    from '@/pages/AlertsPage'
 import StatsPage     from '@/pages/StatsPage'
 import WhatsAppPage  from '@/pages/WhatsAppPage'
+import AdminRolesPage from '@/pages/AdminRolesPage'
+import type { AppPage } from '@/types'
 
-type Page = 'dashboard' | 'inventory' | 'alerts' | 'stats' | 'whatsapp'
-
-const PAGES: Record<Page, JSX.Element> = {
+const PAGES: Record<AppPage, JSX.Element> = {
   dashboard: <DashboardPage />,
   inventory: <InventoryPage />,
   alerts:    <AlertsPage />,
   stats:     <StatsPage />,
   whatsapp:  <WhatsAppPage />,
+  admin:     <AdminRolesPage />,
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuth()
-  const [page, setPage]     = useState<Page>('dashboard')
+  const { isAuthenticated, user } = useAuth()
+  const [page, setPage] = useState<AppPage>('dashboard')
+
+  useEffect(() => {
+    if (page === 'admin' && user?.role !== 'OWNER') {
+      setPage('dashboard')
+    }
+  }, [page, user?.role])
 
   if (!isAuthenticated) return <AuthPage />
 
