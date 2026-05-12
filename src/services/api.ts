@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type {
-  LoginRequest, RegisterRequest, AuthResponse,
+  LoginRequest, RegisterRequest, AuthResponse, AuthMeResponse,
   CreateProductRequest, UpdateProductRequest, AdjustRequest,
   Product, Dashboard,
   RbacMatrixResponse, RoleModuleCellDto, AdminUserRowDto, AdminCreateUserRequest,
@@ -34,6 +34,15 @@ http.interceptors.request.use(cfg => {
 http.interceptors.response.use(
   r => r,
   err => {
+    if (err.response?.status === 503) {
+      maintenance503Listeners.forEach(fn => {
+        try {
+          fn()
+        } catch {
+          /* noop */
+        }
+      })
+    }
     if (err.response?.status === 401) {
       localStorage.removeItem('shs_token')
       window.location.href = '/'
@@ -42,10 +51,20 @@ http.interceptors.response.use(
   }
 )
 
+const maintenance503Listeners = new Set<() => void>()
+export function onMaintenance503(callback: () => void) {
+  maintenance503Listeners.add(callback)
+  return () => {
+    maintenance503Listeners.delete(callback)
+  }
+}
+
 // ── auth ──────────────────────────────────────────────────────────────────────
 export const authService = {
-  login:    (data: LoginRequest):    Promise<AuthResponse> => http.post('auth/login',    data).then(r => r.data),
+  login: (data: LoginRequest): Promise<AuthResponse> => http.post('auth/login', data).then(r => r.data),
   register: (data: RegisterRequest): Promise<AuthResponse> => http.post('auth/register', data).then(r => r.data),
+  me: (): Promise<AuthMeResponse> => http.get('auth/me').then(r => r.data),
+  maintenanceStatus: (): Promise<{ enabled: boolean }> => http.get('auth/maintenance').then(r => r.data),
 }
 
 // ── dashboard ─────────────────────────────────────────────────────────────────
@@ -76,4 +95,8 @@ export const adminService = {
     http.post('admin/users', data).then(r => r.data),
   updateUserRole: (userId: string, roleId: number): Promise<void> =>
     http.patch(`admin/users/${userId}/role`, { roleId }).then(() => undefined),
+  getMaintenance: (): Promise<{ enabled: boolean }> =>
+    http.get('admin/maintenance').then(r => r.data),
+  setMaintenance: (enabled: boolean): Promise<void> =>
+    http.put('admin/maintenance', { enabled }).then(() => undefined),
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminService } from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 import type { AdminCreateUserRequest, RoleModuleCellDto } from '@/types'
 
@@ -9,10 +10,15 @@ function cellKey(roleId: number, moduleId: number) {
 }
 
 export default function AdminRolesPage() {
+  const { refreshUser } = useAuth()
   const qc = useQueryClient()
   const { data: rbac, isLoading: rbacLoading } = useQuery({
     queryKey: ['admin', 'rbac'],
     queryFn: () => adminService.getRbac(),
+  })
+  const { data: maint } = useQuery({
+    queryKey: ['admin', 'maintenance'],
+    queryFn: () => adminService.getMaintenance(),
   })
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin', 'users'],
@@ -56,9 +62,10 @@ export default function AdminRolesPage() {
 
   const savePerms = useMutation({
     mutationFn: () => adminService.updatePermissions(Object.values(permMap)),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Permisos guardados')
       qc.invalidateQueries({ queryKey: ['admin', 'rbac'] })
+      await refreshUser().catch(() => {})
     },
     onError: (e: unknown) => {
       const msg =
@@ -107,6 +114,21 @@ export default function AdminRolesPage() {
     },
   })
 
+  const setMaint = useMutation({
+    mutationFn: (enabled: boolean) => adminService.setMaintenance(enabled),
+    onSuccess: (_data, enabled) => {
+      toast.success(enabled ? 'Mantenimiento activado' : 'Mantenimiento desactivado')
+      qc.invalidateQueries({ queryKey: ['admin', 'maintenance'] })
+    },
+    onError: (e: unknown) => {
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined
+      toast.error(msg || 'No se pudo cambiar el modo mantenimiento')
+    },
+  })
+
   const togglePerm = (
     roleId: number,
     moduleId: number,
@@ -142,6 +164,27 @@ export default function AdminRolesPage() {
           Solo el rol OWNER puede gestionar usuarios y permisos de módulos.
         </p>
       </div>
+
+      <section className="card p-6 border-amber-100 bg-amber-50/40">
+        <h2 className="text-sm font-semibold text-gray-800 mb-1">Modo mantenimiento</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Cuando está activo, usuarios que no son OWNER pueden iniciar sesión pero la API devuelve error al cargar datos.
+          Útil para demostraciones o cortes controlados.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={setMaint.isPending}
+            onClick={() => setMaint.mutate(!(maint?.enabled ?? false))}
+            className="btn-primary text-sm py-2 px-4 disabled:opacity-50"
+          >
+            {maint?.enabled ? 'Desactivar mantenimiento' : 'Activar mantenimiento'}
+          </button>
+          {maint?.enabled && (
+            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Activo</span>
+          )}
+        </div>
+      </section>
 
       {/* Crear usuario */}
       <section className="card p-6">

@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDeleteProduct } from '@/hooks/useProducts'
+import { useAuth } from '@/context/AuthContext'
 import ProductGrid  from '@/components/ProductGrid'
 import ProductModal from '@/components/ProductModal'
 import AdjustModal  from '@/components/AdjustModal'
+import { MOD, modulePerm } from '@/lib/permissions'
 import type { ModalState } from '@/types'
 
 export default function AlertsPage() {
+  const { user } = useAuth()
+  const inv = modulePerm(user, MOD.INVENTORY)
+  const gridCaps = { edit: inv.canUpdate, delete: inv.canDelete, adjust: inv.canUpdate }
   const { data, isLoading } = useDashboard()
   const deleteProduct       = useDeleteProduct()
   const [modal, setModal]   = useState<ModalState>(null)
@@ -36,7 +41,7 @@ export default function AlertsPage() {
           <h2 className="text-sm font-semibold text-red-500 mb-3">
             📦 Stock bajo ({data!.lowStockProducts.length})
           </h2>
-          <ProductGrid products={data!.lowStockProducts} setModal={setModal} onDelete={handleDelete} />
+          <ProductGrid products={data!.lowStockProducts} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />
         </section>
       )}
 
@@ -45,7 +50,7 @@ export default function AlertsPage() {
           <h2 className="text-sm font-semibold text-amber-500 mb-3">
             📅 Por vencer ({data!.expiringProducts.length})
           </h2>
-          <ProductGrid products={data!.expiringProducts} setModal={setModal} onDelete={handleDelete} />
+          <ProductGrid products={data!.expiringProducts} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />
         </section>
       )}
 

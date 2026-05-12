@@ -1,6 +1,14 @@
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export type UserRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
 
+export interface ModulePermission {
+  key: string
+  canCreate: boolean
+  canRead: boolean
+  canUpdate: boolean
+  canDelete: boolean
+}
+
 export interface LoginRequest {
   email: string
   password: string
@@ -19,6 +27,15 @@ export interface AuthResponse {
   name: string
   email: string
   role: UserRole
+  permissions: ModulePermission[]
+}
+
+export interface AuthMeResponse {
+  userId: string
+  name: string
+  email: string
+  role: UserRole
+  permissions: ModulePermission[]
 }
 
 export interface AuthUser {
@@ -26,6 +43,7 @@ export interface AuthUser {
   name: string
   email: string
   role: UserRole
+  permissions: ModulePermission[]
 }
 
 export type AppPage = 'dashboard' | 'inventory' | 'alerts' | 'stats' | 'whatsapp' | 'admin'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { authService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
@@ -10,6 +10,14 @@ export default function AuthPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [form, setForm] = useState({ email: '', password: '', name: '', whatsappNumber: '' })
   const [busy, setBusy] = useState(false)
+  const [maintenanceOn, setMaintenanceOn] = useState(false)
+
+  useEffect(() => {
+    authService
+      .maintenanceStatus()
+      .then(s => setMaintenanceOn(s.enabled))
+      .catch(() => {})
+  }, [])
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
@@ -40,6 +48,12 @@ export default function AuthPage() {
           <h1 className="text-xl font-bold text-gray-800">SmartHome Shopper</h1>
           <p className="text-sm text-gray-400 mt-1">Inventario inteligente del hogar</p>
         </div>
+
+        {maintenanceOn && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <strong>Mantenimiento activo:</strong> solo la cuenta administrador (OWNER) puede usar la app. El resto de usuarios verán un mensaje tras iniciar sesión.
+          </div>
+        )}
 
         <div className="card p-6">
           {/* tabs */}

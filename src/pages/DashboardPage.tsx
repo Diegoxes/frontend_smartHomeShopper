@@ -1,16 +1,22 @@
 import { useState } from 'react'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDeleteProduct } from '@/hooks/useProducts'
+import { useAuth } from '@/context/AuthContext'
 import StatCard     from '@/components/StatCard'
 import ProductGrid  from '@/components/ProductGrid'
 import ProductModal from '@/components/ProductModal'
 import AdjustModal  from '@/components/AdjustModal'
+import { MOD, modulePerm } from '@/lib/permissions'
 import type { ModalState } from '@/types'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  const inv = modulePerm(user, MOD.INVENTORY)
   const { data, isLoading } = useDashboard()
   const deleteProduct       = useDeleteProduct()
   const [modal, setModal]   = useState<ModalState>(null)
+
+  const gridCaps = { edit: inv.canUpdate, delete: inv.canDelete, adjust: inv.canUpdate }
 
   const handleDelete = (id: string) => {
     if (!confirm('¿Eliminar este producto?')) return
@@ -26,9 +32,11 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-800">Dashboard 👋</h1>
           <p className="text-sm text-gray-400 mt-0.5">Resumen de tu inventario del hogar</p>
         </div>
-        <button onClick={() => setModal({ type: 'form' })} className="btn-primary">
-          + Agregar producto
-        </button>
+        {inv.canCreate && (
+          <button type="button" onClick={() => setModal({ type: 'form' })} className="btn-primary">
+            + Agregar producto
+          </button>
+        )}
       </div>
 
       {/* stats */}
@@ -42,7 +50,7 @@ export default function DashboardPage() {
       {(data?.lowStockProducts?.length ?? 0) > 0 && (
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-red-500 mb-3">⚠ Stock bajo</h2>
-          <ProductGrid products={data!.lowStockProducts} setModal={setModal} onDelete={handleDelete} />
+          <ProductGrid products={data!.lowStockProducts} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />
         </section>
       )}
 
@@ -50,7 +58,7 @@ export default function DashboardPage() {
       {(data?.expiringProducts?.length ?? 0) > 0 && (
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-amber-500 mb-3">📅 Por vencer esta semana</h2>
-          <ProductGrid products={data!.expiringProducts} setModal={setModal} onDelete={handleDelete} />
+          <ProductGrid products={data!.expiringProducts} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />
         </section>
       )}
 

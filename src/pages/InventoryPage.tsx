@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDeleteProduct } from '@/hooks/useProducts'
+import { useAuth } from '@/context/AuthContext'
 import ProductGrid  from '@/components/ProductGrid'
 import ProductModal from '@/components/ProductModal'
 import AdjustModal  from '@/components/AdjustModal'
+import { MOD, modulePerm } from '@/lib/permissions'
 import type { ModalState } from '@/types'
 import { CATEGORIES } from '@/types'
 
 export default function InventoryPage() {
+  const { user } = useAuth()
+  const inv = modulePerm(user, MOD.INVENTORY)
+  const gridCaps = { edit: inv.canUpdate, delete: inv.canDelete, adjust: inv.canUpdate }
   const { data, isLoading } = useDashboard()
   const deleteProduct       = useDeleteProduct()
   const [modal, setModal]   = useState<ModalState>(null)
@@ -30,9 +35,11 @@ export default function InventoryPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Inventario 📦</h1>
-        <button onClick={() => setModal({ type: 'form' })} className="btn-primary">
-          + Agregar
-        </button>
+        {inv.canCreate && (
+          <button type="button" onClick={() => setModal({ type: 'form' })} className="btn-primary">
+            + Agregar
+          </button>
+        )}
       </div>
 
       {/* filters */}
@@ -62,7 +69,7 @@ export default function InventoryPage() {
                 : <p>Sin resultados para "{search}"</p>
               }
             </div>
-          : <ProductGrid products={filtered} setModal={setModal} onDelete={handleDelete} />
+          : <ProductGrid products={filtered} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />
       }
 
       {modal?.type === 'form' && <ProductModal product={modal.data} onClose={() => setModal(null)} />}

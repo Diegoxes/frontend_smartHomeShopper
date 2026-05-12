@@ -7,9 +7,14 @@ interface Props {
   onRestock: (p: Product) => void
   onDelete:  (id: string) => void
   onEdit:    (p: Product) => void
+  /** Si se omite, se muestran todas las acciones (compat). */
+  caps?: { edit: boolean; delete: boolean; adjust: boolean }
 }
 
-export default function ProductCard({ product, onConsume, onRestock, onDelete, onEdit }: Props) {
+export default function ProductCard({ product, onConsume, onRestock, onDelete, onEdit, caps }: Props) {
+  const canEdit = caps == null || caps.edit
+  const canDelete = caps == null || caps.delete
+  const canAdjust = caps == null || caps.adjust
   const pct = Math.min(100, (product.quantity / Math.max(product.minQuantity * 3, 0.001)) * 100)
   const barClass = product.lowStock ? 'bg-red-400' : pct < 50 ? 'bg-amber-400' : 'bg-brand-400'
   const qty = product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(1)
@@ -37,14 +42,20 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
           </div>
         </div>
         <div className="flex gap-1 shrink-0">
-          <button
-            onClick={() => onEdit(product)}
-            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors text-sm"
-          >✏️</button>
-          <button
-            onClick={() => onDelete(product.id)}
-            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors text-sm"
-          >🗑</button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(product)}
+              className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+            >✏️</button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(product.id)}
+              className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors text-sm"
+            >🗑</button>
+          )}
         </div>
       </div>
 
@@ -65,16 +76,20 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
       </div>
 
       {/* actions */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => onConsume(product)}
-          className="flex-1 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
-        >− Consumir</button>
-        <button
-          onClick={() => onRestock(product)}
-          className="flex-1 py-1.5 text-xs font-medium border border-brand-200 bg-brand-50 rounded-lg text-brand-700 hover:bg-brand-100 transition-colors"
-        >+ Reponer</button>
-      </div>
+      {canAdjust && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onConsume(product)}
+            className="flex-1 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
+          >− Consumir</button>
+          <button
+            type="button"
+            onClick={() => onRestock(product)}
+            className="flex-1 py-1.5 text-xs font-medium border border-brand-200 bg-brand-50 rounded-lg text-brand-700 hover:bg-brand-100 transition-colors"
+          >+ Reponer</button>
+        </div>
+      )}
     </div>
   )
 }
