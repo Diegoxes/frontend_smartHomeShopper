@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Product, CreateProductRequest, UnitType } from '@/types'
-import { UNIT_OPTIONS, CATEGORIES } from '@/types'
+import { UNIT_OPTIONS } from '@/types'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
-import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar } from 'react-icons/lu'
+import { categoryService } from '@/services/api'
+import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus } from 'react-icons/lu'
 
 interface Props {
   product?: Product
@@ -22,6 +24,7 @@ type FormState = {
 }
 
 export default function ProductModal({ product, onClose }: Props) {
+  const queryClient = useQueryClient()
   const create = useCreateProduct()
   const update = useUpdateProduct()
 
@@ -37,8 +40,31 @@ export default function ProductModal({ product, onClose }: Props) {
     barcode:          product?.barcode ?? '',
   })
 
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.list(),
+  })
+
+  const createCategory = useMutation({
+    mutationFn: categoryService.create,
+    onSuccess: (newCat) => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      setForm(f => ({ ...f, category: newCat.name }))
+      setNewCategoryName('')
+      setShowNewCategory(false)
+    },
+  })
+
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [key]: e.target.value }))
+
+  const handleCreateCategory = () => {
+    if (!newCategoryName.trim()) return
+    createCategory.mutate({ name: newCategoryName.trim() })
+  }
 
   const busy = create.isPending || update.isPending
 
@@ -181,10 +207,52 @@ export default function ProductModal({ product, onClose }: Props) {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1.5">Categoría</label>
-                <select className="input" value={form.category} onChange={set('category')}>
-                  <option value="">Sin categoría</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                {showNewCategory ? (
+                  <div className="flex gap-2">
+                    <input
+                      className="input flex-1"
+                      placeholder="Ej: Ferretería, Farmacia, Bodega..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={!newCategoryName.trim() || createCategory.isPending}
+                      className="px-3 py-2 bg-accent-600 text-white text-sm font-semibold rounded-lg hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <LuSave className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewCategory(false)
+                        setNewCategoryName('')
+                      }}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      <LuX className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select className="input flex-1" value={form.category} onChange={set('category')}>
+                      <option value="">Sin categoría</option>
+                      {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCategory(true)}
+                      className="px-3 py-2 bg-brand-100 text-brand-700 text-sm font-semibold rounded-lg hover:bg-brand-200 transition-colors flex items-center gap-1.5"
+                      title="Crear nueva categoría"
+                    >
+                      <LuPlus className="w-4 h-4" />
+                      Nueva
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1.5 flex items-center gap-1.5">

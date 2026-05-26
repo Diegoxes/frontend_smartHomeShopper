@@ -150,10 +150,25 @@ export const UNIT_OPTIONS: { value: UnitType; label: string }[] = [
   { value: 'PACK', label: 'Paquetes' },
 ]
 
+// Categorías deprecadas - ahora se cargan dinámicamente desde el backend
 export const CATEGORIES = [
   'General', 'Alimentos', 'Bebidas', 'Limpieza', 'Electrónica',
   'Ropa', 'Herramientas', 'Servicios', 'Otros',
 ]
+
+export interface Category {
+  id: string
+  name: string
+  description?: string
+  colorHex?: string
+  createdAt: string
+}
+
+export interface CreateCategoryRequest {
+  name: string
+  description?: string
+  colorHex?: string
+}
 
 export interface Product {
   id: string

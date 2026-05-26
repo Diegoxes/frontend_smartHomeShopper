@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { productService } from '@/services/api'
+import { productService, categoryService } from '@/services/api'
 import { useDeleteProduct } from '@/hooks/useProducts'
 import { useAuth } from '@/context/AuthContext'
 import ProductGrid from '@/components/ProductGrid'
@@ -8,7 +8,6 @@ import ProductModal from '@/components/ProductModal'
 import AdjustModal from '@/components/AdjustModal'
 import { MOD, modulePerm } from '@/lib/permissions'
 import type { ModalState } from '@/types'
-import { CATEGORIES } from '@/types'
 import { LuPlus, LuSearch, LuFilter, LuPackage, LuBell, LuCalendar } from 'react-icons/lu'
 
 export default function InventoryPage() {
@@ -30,6 +29,11 @@ export default function InventoryPage() {
       lowStock: lowStock || undefined,
       expiringSoon: expiringSoon || undefined,
     }),
+  })
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.list(),
   })
 
   const handleDelete = (id: string) => {
@@ -75,7 +79,7 @@ export default function InventoryPage() {
             onChange={e => setCat(e.target.value)}
           >
             <option value="">Todas las categorías</option>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
           <button 
             type="button" 

@@ -8,6 +8,7 @@ import type {
   PlatformOrganizationRow, PlatformUserRow,
   Supplier, CreateSupplierRequest, PurchasesPage,
   RotationReport, InventoryReport, ExecutiveDashboard,
+  Category, CreateCategoryRequest,
 } from '@/types'
 
 export const API_PREFIX = '/api'
@@ -142,4 +143,11 @@ export const adminService = {
   getMaintenance: (): Promise<{ enabled: boolean }> => http.get('admin/maintenance').then(r => r.data),
   setMaintenance: (enabled: boolean): Promise<void> =>
     http.put('admin/maintenance', { enabled }).then(() => undefined),
+}
+
+export const categoryService = {
+  list: (): Promise<Category[]> => http.get('categories').then(r => r.data),
+  create: (data: CreateCategoryRequest): Promise<Category> =>
+    http.post('categories', data).then(r => r.data),
+  delete: (id: string): Promise<void> => http.delete(`categories/${id}`).then(() => undefined),
 }
