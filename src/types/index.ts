@@ -186,6 +186,7 @@ export interface Product {
   barcode?: string | null
   category?: string | null
   imageUrl?: string | null
+  unitCost?: number | null
   salePrice?: number | null
   lastCost?: number | null
   avgCost?: number | null
@@ -210,6 +211,7 @@ export interface CreateProductRequest {
   expiryDate?: string | null
   barcode?: string | null
   category?: string | null
+  unitCost?: number | null
   salePrice?: number | null
 }
 

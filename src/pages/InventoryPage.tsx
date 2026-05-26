@@ -21,7 +21,7 @@ export default function InventoryPage() {
   const [lowStock, setLowStock] = useState(false)
   const [expiringSoon, setExpiringSoon] = useState(false)
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isPending, isFetching } = useQuery({
     queryKey: ['products', search, cat, lowStock, expiringSoon],
     queryFn: () => productService.getAll({
       q: search || undefined,
@@ -40,6 +40,9 @@ export default function InventoryPage() {
     if (!confirm('¿Eliminar este producto?')) return
     deleteProduct.mutate(id)
   }
+
+  const hasFilters = !!(search || cat || lowStock || expiringSoon)
+  const showLoading = isPending || (isFetching && products.length === 0)
 
   return (
     <div>
@@ -100,7 +103,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {showLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="w-12 h-12 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin mx-auto mb-4" />
@@ -114,20 +117,10 @@ export default function InventoryPage() {
           </div>
           <p className="text-slate-600 font-medium">No se encontraron productos</p>
           <p className="text-sm text-slate-500 mt-1">
-            {search || cat || lowStock || expiringSoon 
-              ? 'Intenta ajustar los filtros' 
-              : 'Comienza agregando tu primer producto'}
+            {hasFilters
+              ? 'Intenta ajustar los filtros'
+              : 'Usa el botón Agregar producto arriba para comenzar'}
           </p>
-          {inv.canCreate && !search && !cat && (
-            <button 
-              type="button" 
-              onClick={() => setModal({ type: 'form' })} 
-              className="btn-primary mt-4"
-            >
-              <LuPlus className="w-4 h-4" />
-              Agregar primer producto
-            </button>
-          )}
         </div>
       ) : (
         <ProductGrid products={products} setModal={setModal} onDelete={handleDelete} caps={gridCaps} />

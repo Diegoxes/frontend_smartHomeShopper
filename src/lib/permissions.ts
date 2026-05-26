@@ -37,8 +37,8 @@ function defaultPermForOrgRole(orgRole: string | null | undefined, key: string):
 export function modulePerm(user: AuthUser | null, key: string): ModulePermission {
   if (!user) return emptyPerm(key)
 
-  // PLATFORM_OWNER administra la plataforma; sin org no opera módulos de negocio
-  if (isPlatformOwner(user) && !belongsToOrganization(user)) {
+  // PLATFORM_OWNER administra la plataforma; no opera módulos de negocio (inventario, compras, etc.)
+  if (isPlatformOwner(user)) {
     return emptyPerm(key)
   }
 
@@ -62,6 +62,9 @@ export function canAccessPage(user: AuthUser | null, page: AppPage): boolean {
     return isPlatformOwner(user)
   }
 
+  // PLATFORM_OWNER no accede a páginas operativas de tenant
+  if (isPlatformOwner(user)) return false
+
   // Inventario, compras, reportes y equipo: solo usuarios con organización
   if (!belongsToOrganization(user)) return false
 
@@ -80,7 +83,7 @@ export function canAccessPage(user: AuthUser | null, page: AppPage): boolean {
 export function firstAllowedPage(user: AuthUser | null): AppPage {
   if (!user) return 'dashboard'
 
-  if (isPlatformOwner(user) && !belongsToOrganization(user)) {
+  if (isPlatformOwner(user)) {
     return 'platform'
   }
 

@@ -4,7 +4,7 @@ import type { Product, CreateProductRequest, UnitType } from '@/types'
 import { UNIT_OPTIONS } from '@/types'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
 import { categoryService } from '@/services/api'
-import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus } from 'react-icons/lu'
+import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus, LuDollarSign } from 'react-icons/lu'
 
 interface Props {
   product?: Product
@@ -21,6 +21,15 @@ type FormState = {
   category: string
   expiryDate: string
   barcode: string
+  unitCost: string
+  salePrice: string
+}
+
+function optionalPrice(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const n = parseFloat(trimmed)
+  return Number.isFinite(n) ? n : null
 }
 
 export default function ProductModal({ product, onClose }: Props) {
@@ -38,6 +47,9 @@ export default function ProductModal({ product, onClose }: Props) {
     category:         product?.category ?? '',
     expiryDate:       product?.expiryDate ?? '',
     barcode:          product?.barcode ?? '',
+    unitCost:         product?.avgCost != null ? String(product.avgCost)
+                      : product?.lastCost != null ? String(product.lastCost) : '',
+    salePrice:        product?.salePrice != null ? String(product.salePrice) : '',
   })
 
   const [showNewCategory, setShowNewCategory] = useState(false)
@@ -80,6 +92,8 @@ export default function ProductModal({ product, onClose }: Props) {
       category:         form.category || null,
       expiryDate:       form.expiryDate || null,
       barcode:          form.barcode || null,
+      unitCost:         optionalPrice(form.unitCost),
+      salePrice:        optionalPrice(form.salePrice),
     }
     if (product) {
       await update.mutateAsync({ id: product.id, data: body })
@@ -198,6 +212,41 @@ export default function ProductModal({ product, onClose }: Props) {
                     onChange={set('consumptionPerUse')} 
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <LuDollarSign className="w-4 h-4" />
+              Precios
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5">Costo unitario</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej: 3.00"
+                  value={form.unitCost}
+                  onChange={set('unitCost')}
+                />
+                <p className="text-xs text-slate-500 mt-1">Lo que pagas al proveedor</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5">Precio de venta</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej: 5.00"
+                  value={form.salePrice}
+                  onChange={set('salePrice')}
+                />
+                <p className="text-xs text-slate-500 mt-1">Lo que cobras al cliente</p>
               </div>
             </div>
           </div>

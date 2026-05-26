@@ -55,6 +55,11 @@ export default function App() {
   useEffect(() => { if (!isAuthenticated) setBlockedByMaintenance(false) }, [isAuthenticated])
   useEffect(() => {
     if (!user) return
+    setPage(firstAllowedPage(user))
+  }, [user?.id, user?.role, user?.orgId])
+
+  useEffect(() => {
+    if (!user) return
     if (!canAccessPage(user, page)) setPage(firstAllowedPage(user))
   }, [page, user])
 

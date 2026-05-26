@@ -1,6 +1,6 @@
 import type { Product } from '@/types'
 import { UNIT_LABELS } from '@/types'
-import { LuPencil, LuTrash2, LuPackage, LuBarcode, LuClock } from 'react-icons/lu'
+import { LuPencil, LuTrash2, LuPackage, LuBarcode, LuClock, LuDollarSign } from 'react-icons/lu'
 
 interface Props {
   product: Product
@@ -19,6 +19,11 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
   const pct = Math.min(100, (product.quantity / Math.max(product.minQuantity * 3, 0.001)) * 100)
   const barClass = product.lowStock ? 'bg-red-400' : pct < 50 ? 'bg-amber-400' : 'bg-brand-400'
   const qty = product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(1)
+  const unitCost = product.avgCost ?? product.lastCost ?? null
+  const stockValue = unitCost != null ? product.quantity * unitCost : null
+  const marginPct = unitCost != null && product.salePrice != null && product.salePrice > 0
+    ? Math.round(((product.salePrice - unitCost) / product.salePrice) * 100)
+    : null
 
   return (
     <div className={[
@@ -93,9 +98,38 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
       </div>
 
       {/* progress bar */}
-      <div className="h-2 rounded-full bg-gray-100 mb-4 overflow-hidden">
+      <div className="h-2 rounded-full bg-gray-100 mb-3 overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${barClass}`} style={{ width: `${pct}%` }} />
       </div>
+
+      {(unitCost != null || product.salePrice != null) && (
+        <div className="mb-4 p-3 bg-slate-50 rounded-lg space-y-1.5 text-xs">
+          {unitCost != null && (
+            <div className="flex justify-between text-slate-600">
+              <span className="flex items-center gap-1"><LuDollarSign className="w-3 h-3" /> Costo/u</span>
+              <span className="font-semibold tabular-nums">${unitCost.toFixed(2)}</span>
+            </div>
+          )}
+          {product.salePrice != null && (
+            <div className="flex justify-between text-slate-600">
+              <span>Venta/u</span>
+              <span className="font-semibold tabular-nums">${product.salePrice.toFixed(2)}</span>
+            </div>
+          )}
+          {stockValue != null && (
+            <div className="flex justify-between text-brand-700 pt-1 border-t border-slate-200">
+              <span className="font-medium">Valor en stock</span>
+              <span className="font-bold tabular-nums">${stockValue.toFixed(2)}</span>
+            </div>
+          )}
+          {marginPct != null && (
+            <div className="flex justify-between text-accent-700">
+              <span>Margen est.</span>
+              <span className="font-semibold tabular-nums">{marginPct}%</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* actions */}
       {canAdjust && (
