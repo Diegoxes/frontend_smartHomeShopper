@@ -129,9 +129,12 @@ export interface RbacMatrixResponse {
 export interface AdminUserRowDto {
   id: string; email: string; name: string
   whatsappNumber?: string | null; roleId: number | null; roleName: string | null
+  platformRole?: string | null; orgRole?: string | null
+  organizationId?: string | null; organizationName?: string | null
 }
 export interface AdminCreateUserRequest {
   email: string; password: string; name: string; roleId: number; whatsappNumber?: string
+  organizationId?: string
 }
 
 // ── Product ───────────────────────────────────────────────────────────────────

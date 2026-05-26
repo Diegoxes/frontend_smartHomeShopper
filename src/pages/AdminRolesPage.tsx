@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { adminService } from '@/services/api'
+import { adminService, platformService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 import type { AdminCreateUserRequest, RoleModuleCellDto } from '@/types'
@@ -15,8 +15,15 @@ import {
   LuBell,
   LuMail,
   LuUser,
-  LuKey
+  LuKey,
+  LuBuilding2,
 } from 'react-icons/lu'
+
+const ORG_ROLE_NAMES = new Set(['MANAGER', 'MEMBER', 'VIEWER'])
+
+function isOrgRoleName(name: string | undefined): boolean {
+  return !!name && ORG_ROLE_NAMES.has(name)
+}
 
 function cellKey(roleId: number, moduleId: number) {
   return `${roleId}-${moduleId}`
@@ -41,9 +48,14 @@ export default function AdminRolesPage() {
     queryKey: ['admin', 'users'],
     queryFn: () => adminService.listUsers(),
   })
+  const { data: organizations = [] } = useQuery({
+    queryKey: ['platform', 'organizations'],
+    queryFn: () => platformService.organizations(),
+  })
 
   const [permMap, setPermMap] = useState<Record<string, RoleModuleCellDto>>({})
   const [draftRoles, setDraftRoles] = useState<Record<string, number>>({})
+  const [draftOrgIds, setDraftOrgIds] = useState<Record<string, string>>({})
 
   const [createForm, setCreateForm] = useState<AdminCreateUserRequest>({
     email: '',
@@ -51,6 +63,7 @@ export default function AdminRolesPage() {
     name: '',
     roleId: 0,
     whatsappNumber: '',
+    organizationId: '',
   })
 
   useEffect(() => {
@@ -119,8 +132,8 @@ export default function AdminRolesPage() {
   })
 
   const patchRole = useMutation({
-    mutationFn: ({ id, roleId }: { id: string; roleId: number }) =>
-      adminService.updateUserRole(id, roleId),
+    mutationFn: ({ id, roleId, organizationId }: { id: string; roleId: number; organizationId?: string }) =>
+      adminService.updateUserRole(id, roleId, organizationId),
     onSuccess: () => {
       toast.success('Rol del usuario actualizado')
       qc.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -167,6 +180,8 @@ export default function AdminRolesPage() {
     () => [...availableRoles].sort((a, b) => a.id - b.id),
     [availableRoles],
   )
+  const createRoleName = rolesSorted.find(r => r.id === createForm.roleId)?.name
+  const createNeedsOrg = isOrgRoleName(createRoleName)
   const modulesSorted = useMemo(
     () => [...(rbac?.modules ?? [])].sort((a, b) => a.id - b.id),
     [rbac?.modules],
@@ -241,9 +256,14 @@ export default function AdminRolesPage() {
               toast.error('Selecciona un rol')
               return
             }
+            if (createNeedsOrg && !createForm.organizationId?.trim()) {
+              toast.error('Selecciona la organización para MANAGER, MEMBER o VIEWER')
+              return
+            }
             createUser.mutate({
               ...createForm,
               whatsappNumber: createForm.whatsappNumber?.trim() || undefined,
+              organizationId: createNeedsOrg ? createForm.organizationId?.trim() : undefined,
             })
           }}
         >
@@ -294,9 +314,16 @@ export default function AdminRolesPage() {
             <select
               className="input"
               value={createForm.roleId || ''}
-              onChange={e =>
-                setCreateForm(f => ({ ...f, roleId: Number(e.target.value) }))
-              }
+              onChange={e => {
+                const roleId = Number(e.target.value)
+                setCreateForm(f => ({
+                  ...f,
+                  roleId,
+                  organizationId: isOrgRoleName(rolesSorted.find(r => r.id === roleId)?.name)
+                    ? f.organizationId
+                    : '',
+                }))
+              }}
               required
             >
               <option value="" disabled>
@@ -304,11 +331,48 @@ export default function AdminRolesPage() {
               </option>
               {rolesSorted.map(r => (
                 <option key={r.id} value={r.id}>
-                  {r.name}
+                  {r.name === 'PLATFORM_OWNER' ? `${r.name} (plataforma)` : `${r.name} (organización)`}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-slate-500 mt-1.5">
+              {createRoleName === 'PLATFORM_OWNER'
+                ? 'Administra la plataforma; no opera inventario de una empresa.'
+                : createNeedsOrg
+                  ? 'MANAGER, MEMBER y VIEWER deben pertenecer a una organización.'
+                  : 'Selecciona un rol para ver requisitos.'}
+            </p>
           </div>
+          {createNeedsOrg && (
+            <div className="sm:col-span-2">
+              <label className="text-xs font-semibold text-slate-600 block mb-1.5">
+                Organización *
+              </label>
+              <div className="relative">
+                <LuBuilding2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  className="input pl-10"
+                  value={createForm.organizationId ?? ''}
+                  onChange={e => setCreateForm(f => ({ ...f, organizationId: e.target.value }))}
+                  required
+                >
+                  <option value="" disabled>
+                    Seleccionar organización...
+                  </option>
+                  {organizations.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.name} ({o.memberCount}/{o.maxMembers} miembros)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {organizations.length === 0 && (
+                <p className="text-xs text-amber-700 mt-1.5">
+                  No hay organizaciones. Créalas desde la pestaña Plataforma o vía onboarding.
+                </p>
+              )}
+            </div>
+          )}
           <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-slate-600 block mb-1.5">WhatsApp (opcional)</label>
             <input
@@ -345,6 +409,7 @@ export default function AdminRolesPage() {
               <tr>
                 <th>Nombre</th>
                 <th>Email</th>
+                <th>Organización</th>
                 <th>Rol</th>
                 <th>Acciones</th>
               </tr>
@@ -353,11 +418,34 @@ export default function AdminRolesPage() {
               {(users ?? []).map(u => {
                 const draft = draftRoles[u.id] ?? u.roleId ?? 0
                 const baseline = u.roleId ?? 0
+                const draftRoleName = rolesSorted.find(r => r.id === draft)?.name
+                const needsOrgPicker = isOrgRoleName(draftRoleName) && !u.organizationId
+                const draftOrg = draftOrgIds[u.id] ?? ''
                 const changed = draft !== baseline
                 return (
                   <tr key={u.id}>
                     <td className="font-semibold text-gray-900">{u.name}</td>
                     <td className="text-slate-600">{u.email}</td>
+                    <td className="text-slate-600 text-sm">
+                      {u.organizationName ?? (
+                        needsOrgPicker ? (
+                          <select
+                            className="input py-1.5 text-xs w-full max-w-[180px]"
+                            value={draftOrg}
+                            onChange={e =>
+                              setDraftOrgIds(d => ({ ...d, [u.id]: e.target.value }))
+                            }
+                          >
+                            <option value="">Elegir org…</option>
+                            {organizations.map(o => (
+                              <option key={o.id} value={o.id}>{o.name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-slate-400 italic">—</span>
+                        )
+                      )}
+                    </td>
                     <td>
                       <select
                         className="input py-2 text-sm w-40"
@@ -380,8 +468,14 @@ export default function AdminRolesPage() {
                       <button
                         type="button"
                         className={`btn-secondary text-xs py-2 px-4 ${changed ? '!bg-accent-50 !text-accent-700 !border-accent-300' : ''}`}
-                        disabled={!changed || patchRole.isPending}
-                        onClick={() => patchRole.mutate({ id: u.id, roleId: draft })}
+                        disabled={!changed || patchRole.isPending || (needsOrgPicker && !draftOrg)}
+                        onClick={() =>
+                          patchRole.mutate({
+                            id: u.id,
+                            roleId: draft,
+                            organizationId: needsOrgPicker ? draftOrg : undefined,
+                          })
+                        }
                       >
                         <LuSave className="w-3.5 h-3.5 mr-1.5 inline" />
                         {changed ? 'Guardar cambio' : 'Sin cambios'}

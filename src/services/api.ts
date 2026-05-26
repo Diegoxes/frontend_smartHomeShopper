@@ -144,8 +144,8 @@ export const adminService = {
   listUsers: (): Promise<AdminUserRowDto[]> => http.get('admin/users').then(r => r.data),
   createUser: (data: AdminCreateUserRequest): Promise<AdminUserRowDto> =>
     http.post('admin/users', data).then(r => r.data),
-  updateUserRole: (userId: string, roleId: number): Promise<void> =>
-    http.patch(`admin/users/${userId}/role`, { roleId }).then(() => undefined),
+  updateUserRole: (userId: string, roleId: number, organizationId?: string): Promise<void> =>
+    http.patch(`admin/users/${userId}/role`, { roleId, organizationId }).then(() => undefined),
   getMaintenance: (): Promise<{ enabled: boolean }> => http.get('admin/maintenance').then(r => r.data),
   setMaintenance: (enabled: boolean): Promise<void> =>
     http.put('admin/maintenance', { enabled }).then(() => undefined),

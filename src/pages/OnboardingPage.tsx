@@ -89,11 +89,14 @@ export default function OnboardingPage() {
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1.5 flex items-center gap-1.5">
                 <LuBriefcase className="w-3.5 h-3.5" />
-                Rubro o industria
+                Rubro de tu negocio
               </label>
+              <p className="text-xs text-slate-500 mb-2">
+                Tipo de empresa (no categorías de productos). Usamos esto para sugerir categorías de inventario.
+              </p>
               <input 
                 className="input" 
-                placeholder="Ej: Comercio, Manufactura, Servicios"
+                placeholder="Ej: Ferretería, Farmacia, Restaurante, Bodega"
                 value={form.industry} 
                 onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} 
               />

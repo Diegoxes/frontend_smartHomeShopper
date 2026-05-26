@@ -203,15 +203,18 @@ export default function ProductModal({ product, onClose }: Props) {
           </div>
 
           <div className="form-section">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Categorización</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Clasificación del producto</h3>
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1.5">Categoría</label>
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5">Categoría del producto</label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Agrupa este ítem en tu catálogo (ej. Lácteos, Herramientas). No es el rubro de tu negocio.
+                </p>
                 {showNewCategory ? (
                   <div className="flex gap-2">
                     <input
                       className="input flex-1"
-                      placeholder="Ej: Ferretería, Farmacia, Bodega..."
+                      placeholder="Ej: Lácteos, Electricidad, Medicamentos..."
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
@@ -246,7 +249,7 @@ export default function ProductModal({ product, onClose }: Props) {
                       type="button"
                       onClick={() => setShowNewCategory(true)}
                       className="px-3 py-2 bg-brand-100 text-brand-700 text-sm font-semibold rounded-lg hover:bg-brand-200 transition-colors flex items-center gap-1.5"
-                      title="Crear nueva categoría"
+                      title="Crear categoría de producto"
                     >
                       <LuPlus className="w-4 h-4" />
                       Nueva

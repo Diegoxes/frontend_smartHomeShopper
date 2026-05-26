@@ -15,6 +15,11 @@ function fullPerm(key: string): ModulePermission {
   return { key, canCreate: true, canRead: true, canUpdate: true, canDelete: true }
 }
 
+/** Usuario que pertenece a una organización (opera inventario, compras, etc.). */
+export function belongsToOrganization(user: AuthUser | null): boolean {
+  return !!user?.orgId
+}
+
 /** Permisos por defecto cuando el backend aún no devolvió la matriz RBAC (org PENDING, token antiguo, etc.). */
 function defaultPermForOrgRole(orgRole: string | null | undefined, key: string): ModulePermission | null {
   if (!orgRole) return null
@@ -31,9 +36,12 @@ function defaultPermForOrgRole(orgRole: string | null | undefined, key: string):
 
 export function modulePerm(user: AuthUser | null, key: string): ModulePermission {
   if (!user) return emptyPerm(key)
-  if (isPlatformOwner(user) && (!user.permissions || user.permissions.length === 0)) {
-    return fullPerm(key)
+
+  // PLATFORM_OWNER administra la plataforma; sin org no opera módulos de negocio
+  if (isPlatformOwner(user) && !belongsToOrganization(user)) {
+    return emptyPerm(key)
   }
+
   const fromApi = user.permissions?.find(p => p.key === key)
   if (fromApi) return fromApi
   return defaultPermForOrgRole(user.orgRole, key) ?? emptyPerm(key)
@@ -44,14 +52,22 @@ export function isPlatformOwner(user: AuthUser | null): boolean {
 }
 
 export function isOrgManager(user: AuthUser | null): boolean {
-  return user?.orgRole === 'MANAGER' || user?.role === 'MANAGER'
+  return belongsToOrganization(user) && user?.orgRole === 'MANAGER'
 }
 
 export function canAccessPage(user: AuthUser | null, page: AppPage): boolean {
   if (!user) return false
-  if (page === 'platform') return isPlatformOwner(user)
-  if (page === 'admin') return isPlatformOwner(user)
-  if (page === 'team') return isOrgManager(user) || modulePerm(user, MOD.USERS).canRead
+
+  if (page === 'platform' || page === 'admin') {
+    return isPlatformOwner(user)
+  }
+
+  // Inventario, compras, reportes y equipo: solo usuarios con organización
+  if (!belongsToOrganization(user)) return false
+
+  if (page === 'team') {
+    return isOrgManager(user) || modulePerm(user, MOD.USERS).canRead
+  }
   if (page === 'dashboard' || page === 'inventory' || page === 'alerts') {
     return modulePerm(user, MOD.INVENTORY).canRead
   }
@@ -63,6 +79,11 @@ export function canAccessPage(user: AuthUser | null, page: AppPage): boolean {
 
 export function firstAllowedPage(user: AuthUser | null): AppPage {
   if (!user) return 'dashboard'
+
+  if (isPlatformOwner(user) && !belongsToOrganization(user)) {
+    return 'platform'
+  }
+
   const order: AppPage[] = [
     'dashboard', 'inventory', 'alerts', 'purchases', 'suppliers',
     'stats', 'whatsapp', 'team', 'platform', 'admin',
@@ -70,5 +91,5 @@ export function firstAllowedPage(user: AuthUser | null): AppPage {
   for (const p of order) {
     if (canAccessPage(user, p)) return p
   }
-  return 'dashboard'
+  return isPlatformOwner(user) ? 'platform' : 'dashboard'
 }
