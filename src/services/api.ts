@@ -34,8 +34,13 @@ http.interceptors.response.use(
     if (err.response?.status === 503) {
       maintenance503Listeners.forEach(fn => { try { fn() } catch { /* noop */ } })
     }
+    if (err.response?.status === 403) {
+      const msg = err.response?.data?.error as string | undefined
+      console.warn('[API 403]', err.config?.url, msg ?? 'Sin permiso')
+    }
     if (err.response?.status === 401) {
       localStorage.removeItem('shs_token')
+      localStorage.removeItem('shs_user')
       window.location.href = '/'
     }
     return Promise.reject(err)
