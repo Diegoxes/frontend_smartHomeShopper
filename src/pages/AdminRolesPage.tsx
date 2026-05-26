@@ -29,6 +29,10 @@ export default function AdminRolesPage() {
     queryKey: ['admin', 'rbac'],
     queryFn: () => adminService.getRbac(),
   })
+  const { data: roles } = useQuery({
+    queryKey: ['admin', 'roles'],
+    queryFn: () => adminService.listRoles(),
+  })
   const { data: maint } = useQuery({
     queryKey: ['admin', 'maintenance'],
     queryFn: () => adminService.getMaintenance(),
@@ -58,20 +62,23 @@ export default function AdminRolesPage() {
     setPermMap(next)
   }, [rbac])
 
+  // Usa roles del endpoint dedicado (/admin/roles) que es más fiable
+  const availableRoles = roles?.length ? roles : (rbac?.roles ?? [])
+
   useEffect(() => {
-    if (!users || !rbac?.roles?.length) return
-    const member = rbac.roles.find(r => r.name === 'MEMBER')
-    const fallbackRoleId = member?.id ?? rbac.roles[0].id
+    if (!users || !availableRoles.length) return
+    const member = availableRoles.find(r => r.name === 'MEMBER')
+    const fallbackRoleId = member?.id ?? availableRoles[0].id
     const d: Record<string, number> = {}
     for (const u of users) d[u.id] = u.roleId ?? fallbackRoleId
     setDraftRoles(d)
-  }, [users, rbac?.roles])
+  }, [users, availableRoles])
 
   useEffect(() => {
-    if (!rbac?.roles?.length || createForm.roleId !== 0) return
-    const member = rbac.roles.find(r => r.name === 'MEMBER')
-    setCreateForm(f => ({ ...f, roleId: member?.id ?? rbac.roles[0].id }))
-  }, [rbac, createForm.roleId])
+    if (!availableRoles.length || createForm.roleId !== 0) return
+    const member = availableRoles.find(r => r.name === 'MEMBER')
+    setCreateForm(f => ({ ...f, roleId: member?.id ?? availableRoles[0].id }))
+  }, [availableRoles, createForm.roleId])
 
   const savePerms = useMutation({
     mutationFn: () => adminService.updatePermissions(Object.values(permMap)),
@@ -157,8 +164,8 @@ export default function AdminRolesPage() {
   }
 
   const rolesSorted = useMemo(
-    () => [...(rbac?.roles ?? [])].sort((a, b) => a.id - b.id),
-    [rbac?.roles],
+    () => [...availableRoles].sort((a, b) => a.id - b.id),
+    [availableRoles],
   )
   const modulesSorted = useMemo(
     () => [...(rbac?.modules ?? [])].sort((a, b) => a.id - b.id),

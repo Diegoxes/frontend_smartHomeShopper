@@ -133,6 +133,7 @@ export const reportService = {
 
 export const adminService = {
   getRbac: (): Promise<RbacMatrixResponse> => http.get('admin/rbac').then(r => r.data),
+  listRoles: (): Promise<{ id: number; name: string }[]> => http.get('admin/roles').then(r => r.data),
   updatePermissions: (cells: RoleModuleCellDto[]): Promise<void> =>
     http.put('admin/rbac/permissions', { cells }).then(() => undefined),
   listUsers: (): Promise<AdminUserRowDto[]> => http.get('admin/users').then(r => r.data),
