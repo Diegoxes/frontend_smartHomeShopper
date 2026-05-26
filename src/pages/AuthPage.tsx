@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { authService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
+import { LuMail, LuLock, LuUser, LuPhone, LuPackage, LuArrowRight, LuBell } from 'react-icons/lu'
 
 type Mode = 'login' | 'register'
 
@@ -39,32 +40,40 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-pearl to-white px-4 py-8">
+      <div className="w-full max-w-md">
 
         {/* logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center text-4xl mx-auto mb-4">🛒</div>
-          <h1 className="text-xl font-bold text-gray-800">SmartHome Shopper</h1>
-          <p className="text-sm text-gray-400 mt-1">Inventario inteligente del hogar</p>
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand-200">
+            <LuPackage className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">SmartInventory</h1>
+          <p className="text-sm text-slate-600 mt-2">Gestión inteligente de stock para empresas B2B</p>
         </div>
 
         {maintenanceOn && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Mantenimiento activo:</strong> solo la cuenta administrador (OWNER) puede usar la app. El resto de usuarios verán un mensaje tras iniciar sesión.
+          <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
+            <div className="flex items-start gap-3">
+              <LuBell className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-semibold">Mantenimiento activo</strong>
+                <p className="mt-1 text-amber-800">Solo la cuenta administrador de plataforma puede usar la aplicación en este momento.</p>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="card p-6">
+        <div className="card p-8 shadow-xl">
           {/* tabs */}
-          <div className="flex p-1 bg-gray-50 rounded-xl mb-6">
+          <div className="flex p-1.5 bg-slate-100 rounded-xl mb-8">
             {(['login', 'register'] as Mode[]).map(m => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={[
-                  'flex-1 py-2 text-sm rounded-lg transition-all font-medium',
-                  mode === m ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400',
+                  'flex-1 py-2.5 text-sm rounded-lg transition-all font-semibold',
+                  mode === m ? 'bg-white text-gray-900 shadow-md' : 'text-slate-500 hover:text-slate-700',
                 ].join(' ')}
               >
                 {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
@@ -72,20 +81,79 @@ export default function AuthPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
-              <input className="input" placeholder="Nombre completo" value={form.name} onChange={set('name')} required />
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5">Nombre completo</label>
+                <div className="relative">
+                  <LuUser className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    className="input pl-10" 
+                    placeholder="Juan Pérez" 
+                    value={form.name} 
+                    onChange={set('name')} 
+                    required 
+                  />
+                </div>
+              </div>
             )}
-            <input className="input" type="email" placeholder="Correo electrónico" value={form.email} onChange={set('email')} required />
-            <input className="input" type="password" placeholder="Contraseña (mín. 6 caracteres)" value={form.password} onChange={set('password')} required minLength={6} />
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1.5">Correo electrónico</label>
+              <div className="relative">
+                <LuMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  className="input pl-10" 
+                  type="email" 
+                  placeholder="tu@empresa.com" 
+                  value={form.email} 
+                  onChange={set('email')} 
+                  required 
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1.5">Contraseña</label>
+              <div className="relative">
+                <LuLock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  className="input pl-10" 
+                  type="password" 
+                  placeholder="Mínimo 6 caracteres" 
+                  value={form.password} 
+                  onChange={set('password')} 
+                  required 
+                  minLength={6} 
+                />
+              </div>
+            </div>
             {mode === 'register' && (
-              <input className="input" placeholder="WhatsApp: +51999999999 (opcional)" value={form.whatsappNumber} onChange={set('whatsappNumber')} />
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5">WhatsApp (opcional)</label>
+                <div className="relative">
+                  <LuPhone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    className="input pl-10" 
+                    placeholder="+51999999999" 
+                    value={form.whatsappNumber} 
+                    onChange={set('whatsappNumber')} 
+                  />
+                </div>
+              </div>
             )}
-            <button type="submit" disabled={busy} className="btn-primary w-full mt-2 py-2.5">
-              {busy ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+            <button type="submit" disabled={busy} className="btn-primary w-full mt-6 py-3 text-base">
+              {busy ? 'Cargando...' : mode === 'login' ? (
+                <>
+                  Entrar
+                  <LuArrowRight className="w-5 h-5" />
+                </>
+              ) : 'Crear cuenta'}
             </button>
           </form>
         </div>
+
+        <p className="text-center text-xs text-slate-500 mt-6">
+          Al continuar, aceptas nuestros términos de servicio y política de privacidad
+        </p>
       </div>
     </div>
   )

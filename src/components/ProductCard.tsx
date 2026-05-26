@@ -1,5 +1,6 @@
 import type { Product } from '@/types'
 import { UNIT_LABELS } from '@/types'
+import { LuPencil, LuTrash2, LuPackage, LuBarcode, LuClock } from 'react-icons/lu'
 
 interface Props {
   product: Product
@@ -21,23 +22,39 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
 
   return (
     <div className={[
-      'bg-white rounded-xl p-4 border transition-shadow hover:shadow-md',
-      product.lowStock ? 'border-red-200' : 'border-gray-100',
+      'card p-5 transition-all hover:shadow-lg',
+      product.lowStock ? 'border-l-4 border-l-red-500' : '',
     ].join(' ')}>
 
       {/* header */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-4">
         <div className="flex-1 min-w-0 pr-2">
-          <p className="text-sm font-semibold text-gray-800 truncate">{product.name}</p>
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex items-start gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
+              <LuPackage className="w-4 h-4 text-brand-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
+              {product.sku && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <LuBarcode className="w-3 h-3 text-slate-400" />
+                  <p className="text-xs text-slate-500">{product.sku}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {product.category && (
-              <span className="badge bg-gray-100 text-gray-500">{product.category}</span>
+              <span className="badge bg-slate-100 text-slate-600">{product.category}</span>
             )}
             {product.lowStock && (
-              <span className="badge bg-red-50 text-red-500">Stock bajo</span>
+              <span className="badge bg-red-100 text-red-700 border border-red-200">Stock bajo</span>
             )}
             {product.expiringSoon && (
-              <span className="badge bg-amber-50 text-amber-600">Vence pronto</span>
+              <span className="badge bg-amber-100 text-amber-700 border border-amber-200">
+                <LuClock className="w-3 h-3 mr-1" />
+                Vence pronto
+              </span>
             )}
           </div>
         </div>
@@ -46,32 +63,37 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
             <button
               type="button"
               onClick={() => onEdit(product)}
-              className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors text-sm"
-            >✏️</button>
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+            >
+              <LuPencil className="w-4 h-4" />
+            </button>
           )}
           {canDelete && (
             <button
               type="button"
               onClick={() => onDelete(product.id)}
-              className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors text-sm"
-            >🗑</button>
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            >
+              <LuTrash2 className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>
 
       {/* quantity */}
-      <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-3xl font-bold text-gray-800">{qty}</span>
-        <span className="text-sm text-gray-400">{UNIT_LABELS[product.unit]}</span>
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-4xl font-bold text-gray-900 tabular-nums">{qty}</span>
+        <span className="text-sm font-medium text-slate-500">{UNIT_LABELS[product.unit as keyof typeof UNIT_LABELS] ?? product.unit}</span>
         {product.daysUntilEmpty != null && (
-          <span className="ml-auto text-xs text-gray-300 tabular-nums">
+          <span className="ml-auto text-xs text-slate-400 tabular-nums flex items-center gap-1">
+            <LuClock className="w-3 h-3" />
             ~{Math.round(product.daysUntilEmpty)} días
           </span>
         )}
       </div>
 
       {/* progress bar */}
-      <div className="h-1.5 rounded-full bg-gray-100 mb-4">
+      <div className="h-2 rounded-full bg-gray-100 mb-4 overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${barClass}`} style={{ width: `${pct}%` }} />
       </div>
 
@@ -81,12 +103,12 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
           <button
             type="button"
             onClick={() => onConsume(product)}
-            className="flex-1 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2 text-xs font-semibold border border-gray-300 rounded-lg text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
           >− Consumir</button>
           <button
             type="button"
             onClick={() => onRestock(product)}
-            className="flex-1 py-1.5 text-xs font-medium border border-brand-200 bg-brand-50 rounded-lg text-brand-700 hover:bg-brand-100 transition-colors"
+            className="flex-1 py-2 text-xs font-semibold border border-brand-300 bg-brand-50 rounded-lg text-brand-700 hover:bg-brand-100 transition-all shadow-sm"
           >+ Reponer</button>
         </div>
       )}

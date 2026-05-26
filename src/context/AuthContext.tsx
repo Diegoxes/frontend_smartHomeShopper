@@ -8,20 +8,43 @@ interface AuthContextType {
   logout: () => void
   refreshUser: () => Promise<void>
   isAuthenticated: boolean
+  needsOnboarding: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+
+function toAuthUser(res: AuthResponse | { userId: string; name: string; email: string; role: UserRole; permissions?: ModulePermission[]; platformRole?: string | null; orgRole?: string | null; orgId?: string | null; needsOnboarding?: boolean }): AuthUser {
+  return {
+    id: res.userId,
+    name: res.name,
+    email: res.email,
+    role: res.role,
+    platformRole: res.platformRole,
+    orgRole: res.orgRole,
+    orgId: res.orgId,
+    needsOnboarding: res.needsOnboarding,
+    permissions: res.permissions ?? [],
+  }
+}
 
 function parseStoredUser(): AuthUser | null {
   const token = localStorage.getItem('shs_token')
   const stored = localStorage.getItem('shs_user')
   if (token && stored) {
     try {
-      const parsed = JSON.parse(stored) as Partial<AuthUser> & Record<string, unknown>
-      const role = (parsed.role as UserRole | undefined) ?? 'MEMBER'
-      const permissions = (parsed.permissions as ModulePermission[] | undefined) ?? []
+      const parsed = JSON.parse(stored) as Partial<AuthUser>
       if (parsed.id && parsed.name && parsed.email) {
-        return { id: parsed.id, name: parsed.name, email: parsed.email, role, permissions }
+        return {
+          id: parsed.id,
+          name: parsed.name,
+          email: parsed.email,
+          role: parsed.role ?? 'PENDING',
+          platformRole: parsed.platformRole,
+          orgRole: parsed.orgRole,
+          orgId: parsed.orgId,
+          needsOnboarding: parsed.needsOnboarding,
+          permissions: parsed.permissions ?? [],
+        }
       }
     } catch {
       return null
@@ -38,21 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem('shs_user')
   }, [])
 
-  const login = useCallback(
-    (res: AuthResponse) => {
-      localStorage.setItem('shs_token', res.token)
-      const u: AuthUser = {
-        id: res.userId,
-        name: res.name,
-        email: res.email,
-        role: res.role,
-        permissions: res.permissions ?? [],
-      }
-      persist(u)
-      setUser(u)
-    },
-    [persist]
-  )
+  const login = useCallback((res: AuthResponse) => {
+    localStorage.setItem('shs_token', res.token)
+    const u = toAuthUser(res)
+    persist(u)
+    setUser(u)
+  }, [persist])
 
   const logout = useCallback(() => {
     localStorage.removeItem('shs_token')
@@ -64,13 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('shs_token')
     if (!token) return
     const me = await authService.me()
-    const u: AuthUser = {
-      id: me.userId,
-      name: me.name,
-      email: me.email,
-      role: me.role,
-      permissions: me.permissions ?? [],
-    }
+    const u = toAuthUser(me)
     persist(u)
     setUser(u)
   }, [persist])
@@ -78,14 +86,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('shs_token')
     if (!token) return
-    refreshUser().catch(() => {
-      /* sesión inválida: 401 lo limpia en interceptor */
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar con sesión guardada; tras login vienen permisos en la respuesta
+    refreshUser().catch(() => {})
   }, [])
 
+  const needsOnboarding = !!user?.needsOnboarding && user.role !== 'PLATFORM_OWNER'
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, refreshUser, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, isAuthenticated: !!user, needsOnboarding }}>
       {children}
     </AuthContext.Provider>
   )

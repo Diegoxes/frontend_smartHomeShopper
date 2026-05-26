@@ -1,88 +1,139 @@
-import { useDashboard } from '@/hooks/useDashboard'
+import { useQuery } from '@tanstack/react-query'
+import { reportService } from '@/services/api'
 import StatCard from '@/components/StatCard'
-import { CATEGORIES } from '@/types'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
-} from 'recharts'
-
-const COLORS = ['#4ade80','#60a5fa','#f59e0b','#f87171','#a78bfa','#34d399','#fb923c','#38bdf8']
+import { 
+  LuChartBar, 
+  LuDownload, 
+  LuPackage, 
+  LuDollarSign, 
+  LuActivity, 
+  LuPause,
+  LuTag,
+  LuTrendingUp 
+} from 'react-icons/lu'
 
 export default function StatsPage() {
-  const { data, isLoading } = useDashboard()
+  const { data: inv, isLoading } = useQuery({ queryKey: ['report-inventory'], queryFn: () => reportService.inventory() })
+  const { data: rotation } = useQuery({ queryKey: ['report-rotation'], queryFn: () => reportService.rotation() })
 
-  if (isLoading) return <p className="text-sm text-gray-400 pt-4">Cargando...</p>
+  const exportReport = async () => {
+    const blob = await reportService.exportXlsx()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reporte-inventario.xlsx'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
-  const products = data?.allProducts ?? []
-
-  const catData = CATEGORIES
-    .map(name => ({ name, count: products.filter(p => p.category === name).length }))
-    .filter(d => d.count > 0)
-
-  const prediction = products
-    .filter(p => p.daysUntilEmpty != null)
-    .sort((a, b) => (a.daysUntilEmpty ?? 999) - (b.daysUntilEmpty ?? 999))
-    .slice(0, 8)
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center">
+        <div className="w-12 h-12 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin mx-auto mb-4" />
+        <p className="text-sm text-slate-500">Cargando reportes...</p>
+      </div>
+    </div>
+  )
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Estadísticas 📊</h1>
-
-      {/* stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total"          value={data?.totalProducts ?? 0} icon="📦" />
-        <StatCard label="Stock bajo"     value={data?.lowStockCount ?? 0}  icon="⚠️" color="text-red-500" />
-        <StatCard label="Por vencer"     value={data?.expiringCount ?? 0}  icon="📅" color="text-amber-500" />
-        <StatCard label="Categorías"     value={catData.length}            icon="🏷️" />
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <LuChartBar className="w-8 h-8 text-brand-500" />
+            Reportes
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">Análisis y métricas de inventario</p>
+        </div>
+        <button type="button" className="btn-secondary" onClick={exportReport}>
+          <LuDownload className="w-4 h-4" />
+          Exportar XLSX
+        </button>
       </div>
 
-      {/* bar chart */}
-      {catData.length > 0 && (
-        <div className="card p-5 mb-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Productos por categoría</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={catData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
-              />
-              <Bar dataKey="count" name="Productos" radius={[4, 4, 0, 0]}>
-                {catData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard 
+          label="Total SKU" 
+          value={inv?.totalSku ?? 0} 
+          icon={LuPackage}
+          bgGradient="from-blue-50 to-blue-100"
+        />
+        <StatCard 
+          label="Valor inventario" 
+          value={`$${inv?.totalEstimatedValue?.toFixed(0) ?? 0}`} 
+          icon={LuDollarSign}
+          bgGradient="from-accent-50 to-accent-100"
+          color="text-accent-700"
+        />
+        <StatCard 
+          label="En rotación" 
+          value={rotation?.rows?.length ?? 0} 
+          icon={LuActivity}
+          bgGradient="from-brand-50 to-brand-100"
+          color="text-brand-700"
+        />
+        <StatCard 
+          label="Sin movimiento" 
+          value={inv?.stagnantProductIds?.length ?? 0} 
+          icon={LuPause}
+          bgGradient="from-slate-50 to-slate-100"
+          color="text-slate-700"
+        />
+      </div>
 
-      {/* prediction table */}
-      <div className="card p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Predicción de agotamiento</h2>
-        {prediction.length === 0
-          ? <p className="text-sm text-gray-300">Necesitas más historial de consumo para calcular predicciones.</p>
-          : (
-            <div className="divide-y divide-gray-50">
-              {prediction.map(p => {
-                const days = Math.round(p.daysUntilEmpty!)
-                const color = days < 3 ? 'bg-red-50 text-red-500'
-                            : days < 7 ? 'bg-amber-50 text-amber-600'
-                            : 'bg-brand-50 text-brand-700'
-                return (
-                  <div key={p.id} className="flex items-center justify-between py-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                      <p className="text-xs text-gray-400">{p.category || 'Sin categoría'}</p>
-                    </div>
-                    <span className={`badge ${color}`}>~{days} días</span>
-                  </div>
-                )
-              })}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center">
+              <LuTag className="w-5 h-5 text-brand-600" />
             </div>
-          )
-        }
+            <h2 className="text-base font-bold text-gray-900">Por categoría</h2>
+          </div>
+          <div className="space-y-3">
+            {(inv?.byCategory ?? []).length > 0 ? (
+              (inv?.byCategory ?? []).map(c => (
+                <div key={c.category} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                  <span className="font-medium text-gray-900">{c.category}</span>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-700">{c.skuCount} SKU</p>
+                    <p className="text-xs text-slate-500">${c.estimatedSpend?.toFixed(0)}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8">Sin datos de categorías</p>
+            )}
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-10 h-10 rounded-lg bg-accent-50 flex items-center justify-center">
+              <LuTrendingUp className="w-5 h-5 text-accent-600" />
+            </div>
+            <h2 className="text-base font-bold text-gray-900">Rotación (30 días)</h2>
+          </div>
+          <div className="space-y-3">
+            {(rotation?.rows ?? []).length > 0 ? (
+              (rotation?.rows ?? []).slice(0, 10).map((r, idx) => (
+                <div key={r.productId} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-brand-700">{idx + 1}</span>
+                    </div>
+                    <span className="font-medium text-gray-900 truncate">{r.productName}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-700">{r.unitsConsumed} u</p>
+                    <p className="text-xs text-slate-500">{r.velocity}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8">Sin datos de rotación</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

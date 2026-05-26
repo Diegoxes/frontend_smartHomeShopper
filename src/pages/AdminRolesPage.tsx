@@ -4,6 +4,19 @@ import { adminService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 import type { AdminCreateUserRequest, RoleModuleCellDto } from '@/types'
+import { 
+  LuSettings, 
+  LuShield, 
+  LuLock, 
+  LuLockOpen, 
+  LuEye, 
+  LuUserPlus, 
+  LuSave,
+  LuBell,
+  LuMail,
+  LuUser,
+  LuKey
+} from 'react-icons/lu'
 
 function cellKey(roleId: number, moduleId: number) {
   return `${roleId}-${moduleId}`
@@ -153,44 +166,68 @@ export default function AdminRolesPage() {
   )
 
   if (rbacLoading || usersLoading) {
-    return <p className="text-sm text-gray-400 pt-4">Cargando administración…</p>
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin mx-auto mb-4" />
+          <p className="text-sm text-slate-500">Cargando administración...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Administración</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Solo el rol OWNER puede gestionar usuarios y permisos de módulos.
+    <div className="space-y-8 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <LuSettings className="w-8 h-8 text-brand-500" />
+          Administración RBAC
+        </h1>
+        <p className="text-sm text-slate-600 mt-1">
+          Gestión de usuarios, roles y permisos de módulos (solo PLATFORM_OWNER)
         </p>
       </div>
 
-      <section className="card p-6 border-amber-100 bg-amber-50/40">
-        <h2 className="text-sm font-semibold text-gray-800 mb-1">Modo mantenimiento</h2>
-        <p className="text-xs text-gray-500 mb-4">
-          Cuando está activo, usuarios que no son OWNER pueden iniciar sesión pero la API devuelve error al cargar datos.
-          Útil para demostraciones o cortes controlados.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={setMaint.isPending}
-            onClick={() => setMaint.mutate(!(maint?.enabled ?? false))}
-            className="btn-primary text-sm py-2 px-4 disabled:opacity-50"
-          >
-            {maint?.enabled ? 'Desactivar mantenimiento' : 'Activar mantenimiento'}
-          </button>
-          {maint?.enabled && (
-            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Activo</span>
-          )}
+      <section className="card p-6 bg-gradient-to-r from-amber-50 to-white border-amber-200">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <LuBell className="w-6 h-6 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-gray-900 mb-2">Modo mantenimiento</h2>
+            <p className="text-sm text-slate-700 mb-4">
+              Cuando está activo, usuarios que no son PLATFORM_OWNER pueden iniciar sesión pero la API devuelve error al cargar datos.
+              Útil para demostraciones o cortes controlados.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={setMaint.isPending}
+                onClick={() => setMaint.mutate(!(maint?.enabled ?? false))}
+                className="btn-primary text-sm py-2.5 px-5 disabled:opacity-50"
+              >
+                {maint?.enabled ? 'Desactivar mantenimiento' : 'Activar mantenimiento'}
+              </button>
+              {maint?.enabled && (
+                <span className="badge bg-amber-100 text-amber-700 border border-amber-300 font-semibold">
+                  ACTIVO
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Crear usuario */}
       <section className="card p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Crear usuario</h2>
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center">
+            <LuUserPlus className="w-5 h-5 text-brand-600" />
+          </div>
+          <h2 className="text-base font-bold text-gray-900">Crear usuario</h2>
+        </div>
         <form
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           onSubmit={e => {
             e.preventDefault()
             if (!createForm.roleId) {
@@ -203,59 +240,84 @@ export default function AdminRolesPage() {
             })
           }}
         >
-          <input
-            className="input"
-            placeholder="Nombre completo"
-            value={createForm.name}
-            onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
-            required
-          />
-          <input
-            className="input"
-            type="email"
-            placeholder="Correo"
-            value={createForm.email}
-            onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
-            required
-          />
-          <input
-            className="input"
-            type="password"
-            placeholder="Contraseña (mín. 6)"
-            minLength={6}
-            value={createForm.password}
-            onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
-            required
-          />
-          <select
-            className="input"
-            value={createForm.roleId || ''}
-            onChange={e =>
-              setCreateForm(f => ({ ...f, roleId: Number(e.target.value) }))
-            }
-            required
-          >
-            <option value="" disabled>
-              Rol…
-            </option>
-            {rolesSorted.map(r => (
-              <option key={r.id} value={r.id}>
-                {r.name}
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-slate-600 block mb-1.5">Nombre completo</label>
+            <div className="relative">
+              <LuUser className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                className="input pl-10"
+                placeholder="Juan Pérez"
+                value={createForm.name}
+                onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600 block mb-1.5">Correo electrónico</label>
+            <div className="relative">
+              <LuMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                className="input pl-10"
+                type="email"
+                placeholder="juan@empresa.com"
+                value={createForm.email}
+                onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-600 block mb-1.5">Contraseña</label>
+            <div className="relative">
+              <LuKey className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                className="input pl-10"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                minLength={6}
+                value={createForm.password}
+                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-slate-600 block mb-1.5">Rol</label>
+            <select
+              className="input"
+              value={createForm.roleId || ''}
+              onChange={e =>
+                setCreateForm(f => ({ ...f, roleId: Number(e.target.value) }))
+              }
+              required
+            >
+              <option value="" disabled>
+                Seleccionar rol...
               </option>
-            ))}
-          </select>
-          <input
-            className="input sm:col-span-2"
-            placeholder="WhatsApp (opcional)"
-            value={createForm.whatsappNumber}
-            onChange={e => setCreateForm(f => ({ ...f, whatsappNumber: e.target.value }))}
-          />
+              {rolesSorted.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-slate-600 block mb-1.5">WhatsApp (opcional)</label>
+            <input
+              className="input"
+              placeholder="+51999999999"
+              value={createForm.whatsappNumber}
+              onChange={e => setCreateForm(f => ({ ...f, whatsappNumber: e.target.value }))}
+            />
+          </div>
           <div className="sm:col-span-2">
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary w-full"
               disabled={createUser.isPending}
             >
+              <LuUserPlus className="w-4 h-4" />
               {createUser.isPending ? 'Creando…' : 'Crear usuario'}
             </button>
           </div>
@@ -264,17 +326,20 @@ export default function AdminRolesPage() {
 
       {/* Usuarios */}
       <section className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">Usuarios</h2>
+        <div className="px-6 py-5 border-b border-gray-200 bg-slate-50">
+          <div className="flex items-center gap-2">
+            <LuShield className="w-5 h-5 text-brand-600" />
+            <h2 className="text-base font-bold text-gray-900">Gestión de usuarios</h2>
+          </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-modern">
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-50">
-                <th className="px-6 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Rol</th>
-                <th className="px-6 py-3 font-medium w-32" />
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -283,12 +348,12 @@ export default function AdminRolesPage() {
                 const baseline = u.roleId ?? 0
                 const changed = draft !== baseline
                 return (
-                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/80">
-                    <td className="px-6 py-3 text-gray-800">{u.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                    <td className="px-4 py-3">
+                  <tr key={u.id}>
+                    <td className="font-semibold text-gray-900">{u.name}</td>
+                    <td className="text-slate-600">{u.email}</td>
+                    <td>
                       <select
-                        className="input py-1.5 text-sm max-w-[9rem]"
+                        className="input py-2 text-sm w-40"
                         value={draft}
                         onChange={e =>
                           setDraftRoles(d => ({
@@ -304,14 +369,15 @@ export default function AdminRolesPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-3">
+                    <td>
                       <button
                         type="button"
-                        className="btn-secondary text-xs py-1.5"
+                        className={`btn-secondary text-xs py-2 px-4 ${changed ? '!bg-accent-50 !text-accent-700 !border-accent-300' : ''}`}
                         disabled={!changed || patchRole.isPending}
                         onClick={() => patchRole.mutate({ id: u.id, roleId: draft })}
                       >
-                        Guardar rol
+                        <LuSave className="w-3.5 h-3.5 mr-1.5 inline" />
+                        {changed ? 'Guardar cambio' : 'Sin cambios'}
                       </button>
                     </td>
                   </tr>
@@ -323,34 +389,64 @@ export default function AdminRolesPage() {
       </section>
 
       {/* Matriz permisos */}
-      <section className="space-y-4">
+      <section className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-gray-700">Permisos por rol y módulo</h2>
+          <div className="flex items-center gap-2">
+            <LuLock className="w-5 h-5 text-brand-600" />
+            <h2 className="text-base font-bold text-gray-900">Permisos por rol y módulo</h2>
+          </div>
           <button
             type="button"
             className="btn-primary"
             disabled={savePerms.isPending || !Object.keys(permMap).length}
             onClick={() => savePerms.mutate()}
           >
+            <LuSave className="w-4 h-4" />
             {savePerms.isPending ? 'Guardando…' : 'Guardar permisos'}
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {rolesSorted.map(role => (
-            <div key={role.id} className="card p-5">
-              <p className="text-xs font-semibold text-brand-600 uppercase tracking-wide mb-3">
-                {role.name}
-              </p>
+            <div key={role.id} className="card overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-brand-50 to-white border-b border-brand-200">
+                <div className="flex items-center gap-2">
+                  <LuShield className="w-5 h-5 text-brand-600" />
+                  <p className="text-base font-bold text-brand-700">
+                    {role.name}
+                  </p>
+                </div>
+              </div>
+              <div className="p-6">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs min-w-[520px]">
+                <table className="w-full text-sm min-w-[600px]">
                   <thead>
-                    <tr className="text-left text-gray-400 border-b border-gray-100">
-                      <th className="py-2 pr-4 font-medium">Módulo</th>
-                      <th className="py-2 px-2 font-medium text-center">Crear</th>
-                      <th className="py-2 px-2 font-medium text-center">Leer</th>
-                      <th className="py-2 px-2 font-medium text-center">Actualizar</th>
-                      <th className="py-2 px-2 font-medium text-center">Eliminar</th>
+                    <tr className="text-left bg-slate-50 border-b border-gray-200">
+                      <th className="py-3 pr-4 font-semibold text-slate-700">Módulo</th>
+                      <th className="py-3 px-3 font-semibold text-center text-slate-700">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <LuUserPlus className="w-4 h-4" />
+                          Crear
+                        </div>
+                      </th>
+                      <th className="py-3 px-3 font-semibold text-center text-slate-700">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <LuEye className="w-4 h-4" />
+                          Leer
+                        </div>
+                      </th>
+                      <th className="py-3 px-3 font-semibold text-center text-slate-700">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <LuLockOpen className="w-4 h-4" />
+                          Actualizar
+                        </div>
+                      </th>
+                      <th className="py-3 px-3 font-semibold text-center text-slate-700">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <LuLock className="w-4 h-4" />
+                          Eliminar
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -358,18 +454,20 @@ export default function AdminRolesPage() {
                       const cell = permMap[cellKey(role.id, mod.id)]
                       if (!cell) {
                         return (
-                          <tr key={mod.id} className="border-b border-gray-50">
-                            <td className="py-2 text-gray-500" colSpan={5}>
+                          <tr key={mod.id} className="border-b border-gray-100">
+                            <td className="py-3 text-slate-500 italic" colSpan={5}>
                               {mod.name} — sin fila (recarga datos)
                             </td>
                           </tr>
                         )
                       }
                       return (
-                        <tr key={mod.id} className="border-b border-gray-50">
-                          <td className="py-2 pr-4 text-gray-700">
-                            <span className="font-medium">{mod.name}</span>
-                            <span className="text-gray-400 ml-2">({mod.key})</span>
+                        <tr key={mod.id} className="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 pr-4">
+                            <div>
+                              <p className="font-semibold text-gray-900">{mod.name}</p>
+                              <p className="text-xs text-slate-500">({mod.key})</p>
+                            </div>
                           </td>
                           {(
                             [
@@ -379,10 +477,10 @@ export default function AdminRolesPage() {
                               ['canDelete', cell.canDelete],
                             ] as const
                           ).map(([field, checked]) => (
-                            <td key={field} className="py-2 px-2 text-center">
+                            <td key={field} className="py-3 px-3 text-center">
                               <input
                                 type="checkbox"
-                                className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                className="w-5 h-5 rounded border-gray-300 text-brand-600 focus:ring-2 focus:ring-brand-500 cursor-pointer"
                                 checked={checked}
                                 onChange={e =>
                                   togglePerm(role.id, mod.id, field, e.target.checked)
@@ -395,6 +493,7 @@ export default function AdminRolesPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
               </div>
             </div>
           ))}

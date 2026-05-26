@@ -13,5 +13,8 @@ export function useDashboard() {
 
 export function useInvalidateDashboard() {
   const qc = useQueryClient()
-  return () => qc.invalidateQueries({ queryKey: DASHBOARD_KEY })
+  return () => {
+    qc.invalidateQueries({ queryKey: DASHBOARD_KEY })
+    qc.invalidateQueries({ queryKey: ['products'] })
+  }
 }
