@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+// Alias @ → src/ para imports limpios (@/components, @/hooks…)
 export default defineConfig({
   plugins: [react()],
   resolve: {

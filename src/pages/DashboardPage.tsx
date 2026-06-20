@@ -1,3 +1,7 @@
+/**
+ * Dashboard operativo: KPIs + productos con alertas activas.
+ * Reutiliza ProductGrid/ModalState igual que InventoryPage para acciones rápidas.
+ */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useDashboard } from '@/hooks/useDashboard'
@@ -24,9 +28,11 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const inv = modulePerm(user, MOD.INVENTORY)
   const { data, isLoading } = useDashboard()
+  // Métricas financieras (valor stock, compras del mes) vienen del endpoint executive
   const { data: exec } = useQuery({ queryKey: ['executive'], queryFn: () => dashboardService.executive() })
   const deleteProduct = useDeleteProduct()
   const [modal, setModal] = useState<ModalState>(null)
+  // Permisos CRUD del módulo INVENTORY → habilitan botones en ProductCard
   const gridCaps = { edit: inv.canUpdate, delete: inv.canDelete, adjust: inv.canUpdate }
 
   const handleDelete = (id: string) => {

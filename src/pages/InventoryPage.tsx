@@ -1,3 +1,7 @@
+/**
+ * Catálogo de productos con filtros server-side.
+ * queryKey incluye filtros → React Query refetch automático al cambiar búsqueda/categoría.
+ */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { productService, categoryService } from '@/services/api'
@@ -15,6 +19,7 @@ export default function InventoryPage() {
   const inv = modulePerm(user, MOD.INVENTORY)
   const gridCaps = { edit: inv.canUpdate, delete: inv.canDelete, adjust: inv.canUpdate }
   const deleteProduct = useDeleteProduct()
+  // ModalState centraliza qué modal está abierto (form | consume | restock)
   const [modal, setModal] = useState<ModalState>(null)
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('')

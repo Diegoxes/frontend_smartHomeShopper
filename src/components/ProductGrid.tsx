@@ -1,3 +1,4 @@
+/** Grid responsivo que delega acciones a ProductCard vía ModalState del padre */
 import type { Product, ModalState } from '@/types'
 import ProductCard from './ProductCard'
 

@@ -1,3 +1,4 @@
+/** Vista global de tenants y usuarios (PLATFORM_OWNER) */
 import { useEffect, useState } from 'react'
 import { platformService } from '@/services/api'
 import type { PlatformOrganizationRow, PlatformUserRow } from '@/types'

@@ -1,3 +1,7 @@
+/**
+ * Tarjeta de producto en grid de inventario.
+ * caps (RBAC) oculta botones editar/eliminar/consumir según permisos del usuario.
+ */
 import type { Product } from '@/types'
 import { UNIT_LABELS } from '@/types'
 import { LuPencil, LuTrash2, LuPackage, LuBarcode, LuClock, LuDollarSign } from 'react-icons/lu'
@@ -16,6 +20,7 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
   const canEdit = caps == null || caps.edit
   const canDelete = caps == null || caps.delete
   const canAdjust = caps == null || caps.adjust
+  // Barra visual: 100% ≈ 3× stock mínimo (referencia visual, no límite real)
   const pct = Math.min(100, (product.quantity / Math.max(product.minQuantity * 3, 0.001)) * 100)
   const barClass = product.lowStock ? 'bg-red-400' : pct < 50 ? 'bg-amber-400' : 'bg-brand-400'
   const qty = product.quantity % 1 === 0 ? product.quantity : product.quantity.toFixed(1)
@@ -96,6 +101,9 @@ export default function ProductCard({ product, onConsume, onRestock, onDelete, o
           </span>
         )}
       </div>
+      {product.stockDisplay && (
+        <p className="text-xs text-slate-500 mb-3">{product.stockDisplay}</p>
+      )}
 
       {/* progress bar */}
       <div className="h-2 rounded-full bg-gray-100 mb-3 overflow-hidden">

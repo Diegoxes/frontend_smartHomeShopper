@@ -1,3 +1,4 @@
+/** Reportes analíticos + exportación XLSX vía blob download */
 import { useQuery } from '@tanstack/react-query'
 import { reportService } from '@/services/api'
 import StatCard from '@/components/StatCard'
@@ -16,6 +17,7 @@ export default function StatsPage() {
   const { data: inv, isLoading } = useQuery({ queryKey: ['report-inventory'], queryFn: () => reportService.inventory() })
   const { data: rotation } = useQuery({ queryKey: ['report-rotation'], queryFn: () => reportService.rotation() })
 
+  // Descarga del archivo generado en el backend (responseType: blob en api.ts)
   const exportReport = async () => {
     const blob = await reportService.exportXlsx()
     const url = URL.createObjectURL(blob)

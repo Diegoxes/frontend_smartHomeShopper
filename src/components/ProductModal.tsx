@@ -1,10 +1,11 @@
-import { useState } from 'react'
+/** Modal crear/editar producto. SKU bloqueado en edición (identificador inmutable). */
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Product, CreateProductRequest, UnitType } from '@/types'
-import { UNIT_OPTIONS } from '@/types'
+import type { Product, CreateProductRequest, UnitType, Supplier, MeasureUnit } from '@/types'
+import { unitSelectOptions } from '@/types'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
-import { categoryService } from '@/services/api'
-import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus, LuDollarSign } from 'react-icons/lu'
+import { categoryService, supplierService, measureUnitService, productService } from '@/services/api'
+import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus, LuDollarSign, LuStore } from 'react-icons/lu'
 
 interface Props {
   product?: Product
@@ -17,12 +18,13 @@ type FormState = {
   quantity: string
   minQuantity: string
   unit: UnitType
-  consumptionPerUse: string
+  unitsPerPurchaseUnit: string
   category: string
   expiryDate: string
   barcode: string
   unitCost: string
   salePrice: string
+  supplierId: string
 }
 
 function optionalPrice(value: string): number | null {
@@ -30,6 +32,13 @@ function optionalPrice(value: string): number | null {
   if (!trimmed) return null
   const n = parseFloat(trimmed)
   return Number.isFinite(n) ? n : null
+}
+
+function optionalUnitsPerBox(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const n = parseInt(trimmed, 10)
+  return Number.isFinite(n) && n > 1 ? n : null
 }
 
 export default function ProductModal({ product, onClose }: Props) {
@@ -43,14 +52,36 @@ export default function ProductModal({ product, onClose }: Props) {
     quantity:         String(product?.quantity ?? 1),
     minQuantity:      String(product?.minQuantity ?? 1),
     unit:             (product?.unit as UnitType) ?? 'UNIT',
-    consumptionPerUse: String(product?.consumptionPerUse ?? 1),
+    unitsPerPurchaseUnit: product?.unitsPerPurchaseUnit != null && product.unitsPerPurchaseUnit > 1
+      ? String(product.unitsPerPurchaseUnit) : '',
     category:         product?.category ?? '',
     expiryDate:       product?.expiryDate ?? '',
     barcode:          product?.barcode ?? '',
     unitCost:         product?.avgCost != null ? String(product.avgCost)
                       : product?.lastCost != null ? String(product.lastCost) : '',
     salePrice:        product?.salePrice != null ? String(product.salePrice) : '',
+    supplierId:       '',
   })
+
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [measureUnits, setMeasureUnits] = useState<MeasureUnit[]>([])
+  const [boxUnitId, setBoxUnitId] = useState('')
+
+  useEffect(() => {
+    measureUnitService.list().then(units => {
+      setMeasureUnits(units)
+      const box = units.find(u => u.code === 'BOX')
+      if (box) setBoxUnitId(prev => prev || box.id)
+    }).catch(() => {})
+    if (!product) supplierService.list().then(setSuppliers).catch(() => {})
+    if (product?.productUoms?.length) {
+      const box = product.productUoms.find(u => u.code === 'BOX') ?? product.productUoms[0]
+      if (box) {
+        setBoxUnitId(box.measureUnitId)
+        setForm(f => ({ ...f, unitsPerPurchaseUnit: String(box.factorToBase) }))
+      }
+    }
+  }, [product])
 
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -82,21 +113,30 @@ export default function ProductModal({ product, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const boxFactor = optionalUnitsPerBox(form.unitsPerPurchaseUnit)
+    const productUoms = boxFactor && boxUnitId
+      ? [{ measureUnitId: boxUnitId, factorToBase: boxFactor }]
+      : undefined
     const body: CreateProductRequest = {
       sku:              form.sku.trim(),
       name:             form.name,
       quantity:         parseFloat(form.quantity),
       minQuantity:      parseFloat(form.minQuantity),
       unit:             form.unit,
-      consumptionPerUse: parseFloat(form.consumptionPerUse),
+      consumptionPerUse: 1,
+      unitsPerPurchaseUnit: boxFactor,
+      productUoms,
       category:         form.category || null,
       expiryDate:       form.expiryDate || null,
       barcode:          form.barcode || null,
       unitCost:         optionalPrice(form.unitCost),
       salePrice:        optionalPrice(form.salePrice),
+      supplierId:       !product && form.supplierId ? form.supplierId : undefined,
     }
     if (product) {
       await update.mutateAsync({ id: product.id, data: body })
+      if (productUoms) await productService.replaceUoms(product.id, productUoms)
+      else await productService.replaceUoms(product.id, [])
     } else {
       await create.mutateAsync(body)
     }
@@ -196,21 +236,38 @@ export default function ProductModal({ product, onClose }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Unidad</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Unidad de inventario</label>
                   <select className="input" value={form.unit} onChange={set('unit')}>
-                    {UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {unitSelectOptions(form.unit).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Casi siempre elige <strong>Unidades</strong>. Compras en cajas con el campo de abajo.
+                  </p>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Consumo por uso</label>
-                  <input 
-                    className="input" 
-                    type="number" 
-                    min="0.01" 
-                    step="0.01" 
-                    value={form.consumptionPerUse} 
-                    onChange={set('consumptionPerUse')} 
-                  />
+                  <label className="text-xs font-semibold text-slate-600 block mb-1.5">Presentación de compra</label>
+                  <select className="input mb-2" value={boxUnitId} onChange={e => setBoxUnitId(e.target.value)}>
+                    <option value="">Sin caja/pack</option>
+                    {measureUnits.filter(m => !m.baseUnit).map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {boxUnitId && (
+                    <>
+                      <input
+                        className="input"
+                        type="number"
+                        min="2"
+                        step="1"
+                        placeholder="Unidades por caja (ej. 24)"
+                        value={form.unitsPerPurchaseUnit}
+                        onChange={set('unitsPerPurchaseUnit')}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        1 {measureUnits.find(m => m.id === boxUnitId)?.name?.toLowerCase() ?? 'caja'} = N unidades en stock.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -233,7 +290,9 @@ export default function ProductModal({ product, onClose }: Props) {
                   value={form.unitCost}
                   onChange={set('unitCost')}
                 />
-                <p className="text-xs text-slate-500 mt-1">Lo que pagas al proveedor</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Lo que pagas al proveedor. Con costo y cantidad, aparece en Compras.
+                </p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1.5">Precio de venta</label>
@@ -249,6 +308,21 @@ export default function ProductModal({ product, onClose }: Props) {
                 <p className="text-xs text-slate-500 mt-1">Lo que cobras al cliente</p>
               </div>
             </div>
+            {!product && parseFloat(form.quantity) > 0 && (
+              <div className="mt-4">
+                <label className="text-xs font-semibold text-slate-600 block mb-1.5 flex items-center gap-1.5">
+                  <LuStore className="w-3.5 h-3.5" />
+                  Proveedor (opcional)
+                </label>
+                <select className="input" value={form.supplierId} onChange={set('supplierId')}>
+                  <option value="">Sin proveedor</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  De quién compraste este stock inicial. Puedes agregar proveedores en el menú Proveedores.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="form-section">

@@ -1,3 +1,4 @@
+/** Resumen operativo: contadores y listas de alertas (stock bajo, por vencer) */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { dashboardService } from '@/services/api'
 

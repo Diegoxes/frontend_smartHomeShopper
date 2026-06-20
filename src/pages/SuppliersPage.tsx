@@ -1,3 +1,4 @@
+/** CRUD básico de proveedores; se usan al reponer stock (AdjustModal) */
 import { useEffect, useState } from 'react'
 import { supplierService } from '@/services/api'
 import type { Supplier } from '@/types'

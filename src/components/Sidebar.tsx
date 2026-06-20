@@ -1,3 +1,7 @@
+/**
+ * Barra lateral: menú filtrado por permisos RBAC.
+ * Solo muestra ítems cuyo módulo tiene canRead; PLATFORM_OWNER ve Plataforma/RBAC.
+ */
 import { useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import type { AppPage } from '@/types'
@@ -13,7 +17,8 @@ import {
   LuUsers, 
   LuGlobe, 
   LuSettings, 
-  LuLogOut 
+  LuLogOut,
+  LuRuler,
 } from 'react-icons/lu'
 
 interface Props {
@@ -30,6 +35,7 @@ type NavItem = {
 export default function Sidebar({ active, onNav }: Props) {
   const { user, logout } = useAuth()
 
+  // Construye nav dinámicamente según permisos del usuario logueado
   const navItems = useMemo(() => {
     const inv = modulePerm(user, MOD.INVENTORY)
     const rep = modulePerm(user, MOD.REPORTS)
@@ -45,6 +51,9 @@ export default function Sidebar({ active, onNav }: Props) {
       items.push({ key: 'suppliers', label: 'Proveedores', icon: LuStore })
       items.push({ key: 'whatsapp', label: 'WhatsApp', icon: LuMessageSquare })
     }
+    if (inv.canUpdate && isOrgManager(user)) {
+      items.push({ key: 'measureUnits', label: 'Unidades', icon: LuRuler })
+    }
     if (rep.canRead) items.push({ key: 'stats', label: 'Reportes', icon: LuTrendingUp })
     if (isOrgManager(user)) items.push({ key: 'team', label: 'Equipo', icon: LuUsers })
     if (isPlatformOwner(user)) {
@@ -57,7 +66,7 @@ export default function Sidebar({ active, onNav }: Props) {
   const userInitials = user?.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-50 border-r border-gray-200 flex flex-col py-6 shrink-0">
+    <aside className="w-64 h-screen bg-slate-50 border-r border-gray-200 flex flex-col py-6 shrink-0">
       <div className="px-6 pb-6 border-b border-gray-200 mb-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
@@ -70,7 +79,7 @@ export default function Sidebar({ active, onNav }: Props) {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 pt-2 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 space-y-1">
         {navItems.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -89,7 +98,7 @@ export default function Sidebar({ active, onNav }: Props) {
         ))}
       </nav>
 
-      <div className="px-4 pt-4 border-t border-gray-200 space-y-2">
+      <div className="shrink-0 px-4 pt-4 border-t border-gray-200 space-y-2">
         {user && (
           <div className="px-3 py-3 bg-white rounded-lg border border-gray-200 mb-2">
             <div className="flex items-center gap-3 mb-2">

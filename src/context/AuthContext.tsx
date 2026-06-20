@@ -1,3 +1,8 @@
+/**
+ * Contexto de autenticación global.
+ * Persiste token (shs_token) y perfil (shs_user) en localStorage para sobrevivir recargas.
+ * Al montar, llama auth/me para refrescar permisos RBAC desde el backend.
+ */
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { AuthUser, AuthResponse, UserRole, ModulePermission } from '@/types'
 import { authService } from '@/services/api'
@@ -13,6 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+// Normaliza la respuesta del backend al shape AuthUser usado en toda la UI
 function toAuthUser(res: AuthResponse | { userId: string; name: string; email: string; role: UserRole; permissions?: ModulePermission[]; platformRole?: string | null; orgRole?: string | null; orgId?: string | null; needsOnboarding?: boolean }): AuthUser {
   return {
     id: res.userId,
@@ -89,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().catch(() => {})
   }, [])
 
+  // Usuario registrado pero sin org → OnboardingPage (no aplica a PLATFORM_OWNER)
   const needsOnboarding = !!user?.needsOnboarding && user.role !== 'PLATFORM_OWNER'
 
   return (

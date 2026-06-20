@@ -1,3 +1,7 @@
+/**
+ * Guía de integración WhatsApp/Twilio (solo documentación en UI).
+ * Los comandos se procesan en el backend vía webhook /api/webhook/whatsapp.
+ */
 import { LuMessageSquare, LuCheck, LuCode, LuBot, LuSend } from 'react-icons/lu'
 
 const STEPS = [

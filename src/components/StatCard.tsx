@@ -1,3 +1,4 @@
+/** Widget reutilizable para KPIs del dashboard y reportes */
 interface Props {
   label: string
   value: number | string

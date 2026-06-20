@@ -1,3 +1,7 @@
+/**
+ * Panel RBAC (solo PLATFORM_OWNER): matriz de permisos por rol/módulo,
+ * gestión de usuarios y toggle de modo mantenimiento.
+ */
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminService, platformService } from '@/services/api'

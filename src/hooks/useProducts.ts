@@ -1,3 +1,8 @@
+/**
+ * Hooks de mutación para productos (React Query).
+ * Tras cada cambio, syncProductQueries actualiza la cache local y
+ * invalida dashboard/executive para mantener KPIs coherentes.
+ */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { productService } from '@/services/api'
 import { DASHBOARD_KEY } from './useDashboard'
@@ -5,6 +10,7 @@ import toast from 'react-hot-toast'
 import type { CreateProductRequest, UpdateProductRequest, AdjustRequest, Product } from '@/types'
 
 export const PRODUCTS_KEY = ['products'] as const
+export const PURCHASES_KEY = ['purchases'] as const
 
 function upsertProductInList(list: Product[], item: Product): Product[] {
   const idx = list.findIndex(p => p.id === item.id)
@@ -16,6 +22,7 @@ function upsertProductInList(list: Product[], item: Product): Product[] {
   return [...list, item]
 }
 
+/** Actualiza listas en cache + refetch para reflejar filtros activos en InventoryPage */
 export function syncProductQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   product?: Product,
@@ -35,6 +42,7 @@ export function syncProductQueries(
     queryClient.refetchQueries({ queryKey: PRODUCTS_KEY, type: 'all' }),
     queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY }),
     queryClient.invalidateQueries({ queryKey: ['executive'] }),
+    queryClient.invalidateQueries({ queryKey: PURCHASES_KEY }),
   ])
 }
 
@@ -91,7 +99,7 @@ export function useRestockProduct() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AdjustRequest }) => productService.restock(id, data),
     onSuccess: async (product) => {
-      toast.success('Stock repuesto')
+      toast.success('Entrada registrada')
       await syncProductQueries(queryClient, product)
     },
     onError: () => toast.error('Error al reponer'),

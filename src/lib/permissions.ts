@@ -1,5 +1,14 @@
+/**
+ * RBAC del lado cliente (complementa la autorización del backend).
+ * El backend es la fuente de verdad; aquí se ocultan páginas y botones según permisos.
+ *
+ * Roles clave:
+ *  - PLATFORM_OWNER: administra la plataforma (no opera inventario de tenants)
+ *  - orgRole (MANAGER/MEMBER/VIEWER): permisos dentro de una organización
+ */
 import type { AuthUser, ModulePermission, AppPage } from '@/types'
 
+/** Claves de módulos que coinciden con la matriz RBAC del backend */
 export const MOD = {
   INVENTORY: 'INVENTORY',
   REPORTS: 'REPORTS',
@@ -76,6 +85,7 @@ export function canAccessPage(user: AuthUser | null, page: AppPage): boolean {
   }
   if (page === 'stats') return modulePerm(user, MOD.REPORTS).canRead
   if (page === 'purchases' || page === 'suppliers') return modulePerm(user, MOD.PURCHASES).canRead
+  if (page === 'measureUnits') return isOrgManager(user) || modulePerm(user, MOD.INVENTORY).canUpdate
   if (page === 'whatsapp') return modulePerm(user, MOD.PURCHASES).canRead
   return false
 }
@@ -88,7 +98,7 @@ export function firstAllowedPage(user: AuthUser | null): AppPage {
   }
 
   const order: AppPage[] = [
-    'dashboard', 'inventory', 'alerts', 'purchases', 'suppliers',
+    'dashboard', 'inventory', 'alerts', 'purchases', 'suppliers', 'measureUnits',
     'stats', 'whatsapp', 'team', 'platform', 'admin',
   ]
   for (const p of order) {

@@ -1,3 +1,7 @@
+/**
+ * Onboarding post-registro: crea la organización del tenant.
+ * El backend devuelve un nuevo JWT con orgId y permisos actualizados.
+ */
 import { useState } from 'react'
 import { organizationService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'

@@ -1,3 +1,4 @@
+/** Vista dedicada a alertas; consume los mismos datos que Dashboard (useDashboard) */
 import { useState } from 'react'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDeleteProduct } from '@/hooks/useProducts'

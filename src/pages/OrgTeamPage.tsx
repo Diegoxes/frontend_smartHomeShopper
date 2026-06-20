@@ -1,3 +1,4 @@
+/** Gestión de miembros de la org (MANAGER o permiso USERS.canRead) */
 import { useEffect, useState } from 'react'
 import { organizationService } from '@/services/api'
 import type { OrgMemberDto } from '@/types'

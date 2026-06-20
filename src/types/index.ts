@@ -1,3 +1,7 @@
+/**
+ * Tipos TypeScript compartidos entre servicios, hooks y componentes.
+ * Reflejan los DTOs del backend; los comentarios de sección agrupan por dominio.
+ */
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export type UserRole = 'PLATFORM_OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER' | 'PENDING'
 
@@ -48,6 +52,7 @@ export interface AuthUser {
   permissions: ModulePermission[]
 }
 
+// Páginas internas de la app (navegación por estado en App.tsx, no por URL)
 export type AppPage =
   | 'dashboard'
   | 'inventory'
@@ -56,6 +61,7 @@ export type AppPage =
   | 'whatsapp'
   | 'purchases'
   | 'suppliers'
+  | 'measureUnits'
   | 'team'
   | 'admin'
   | 'platform'
@@ -144,14 +150,23 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   UNIT: 'unid', KG: 'kg', LITER: 'L', GRAM: 'g', ML: 'ml', PACK: 'paq',
 }
 
+/** Opciones retail: stock en unidades; cajas solo si vendes el paquete cerrado. */
 export const UNIT_OPTIONS: { value: UnitType; label: string }[] = [
-  { value: 'UNIT', label: 'Unidades' },
-  { value: 'KG', label: 'Kilogramos (kg)' },
-  { value: 'LITER', label: 'Litros (L)' },
-  { value: 'GRAM', label: 'Gramos (g)' },
-  { value: 'ML', label: 'Mililitros (ml)' },
-  { value: 'PACK', label: 'Paquetes' },
+  { value: 'UNIT', label: 'Unidades (pastilla, frasco, pieza…)' },
+  { value: 'PACK', label: 'Cajas / paquetes (vendes la caja cerrada)' },
 ]
+
+/** Incluye unidad legacy al editar productos creados con kg/L/g/ml. */
+export function unitSelectOptions(current?: UnitType | string) {
+  const cur = current as UnitType | undefined
+  if (cur && !UNIT_OPTIONS.some(o => o.value === cur)) {
+    return [
+      ...UNIT_OPTIONS,
+      { value: cur, label: `${UNIT_LABELS[cur] ?? cur} (anterior — cambia a Unidades si puedes)` },
+    ]
+  }
+  return UNIT_OPTIONS
+}
 
 // Categorías deprecadas - ahora se cargan dinámicamente desde el backend
 export const CATEGORIES = [
@@ -193,6 +208,9 @@ export interface Product {
   marginPercent?: number | null
   purchaseUnit?: string | null
   unitsPerPurchaseUnit?: number | null
+  productUoms?: ProductUom[]
+  stockBreakdown?: StockBreakdown[]
+  stockDisplay?: string | null
   lowStock: boolean
   expiringSoon: boolean
   daysUntilEmpty?: number | null
@@ -207,12 +225,50 @@ export interface CreateProductRequest {
   quantity: number
   minQuantity: number
   unit: UnitType
-  consumptionPerUse: number
+  consumptionPerUse?: number
+  unitsPerPurchaseUnit?: number | null
   expiryDate?: string | null
   barcode?: string | null
   category?: string | null
   unitCost?: number | null
   salePrice?: number | null
+  supplierId?: string
+  productUoms?: ProductUomInput[]
+}
+
+export interface ProductUom {
+  id?: string
+  measureUnitId: string
+  code?: string
+  name?: string
+  factorToBase: number
+}
+
+export interface ProductUomInput {
+  measureUnitId: string
+  factorToBase: number
+}
+
+export interface MeasureUnit {
+  id: string
+  code: string
+  name: string
+  baseUnit: boolean
+  active: boolean
+}
+
+export interface StockBreakdown {
+  measureUnitId: string
+  code?: string
+  name: string
+  factor: number
+  fullUnits: number
+  remainder: number
+}
+
+export interface CreateMeasureUnitRequest {
+  code: string
+  name: string
 }
 
 export type UpdateProductRequest = Partial<CreateProductRequest>
@@ -221,7 +277,11 @@ export interface AdjustRequest {
   amount: number
   note?: string
   supplierId?: string
+  /** Costo por unidad base confirmado */
   unitPrice?: number
+  measureUnitId?: string
+  packagePrice?: number
+  costInputMode?: 'PER_BASE' | 'PER_PACKAGE'
 }
 
 export interface AdjustStockRequest {
@@ -300,6 +360,7 @@ export interface Dashboard {
   allProducts: Product[]
 }
 
+// Estado discriminado para modales de inventario (formulario, consumo, reposición…)
 export type ModalState =
   | { type: 'form'; data?: Product }
   | { type: 'consume'; data: Product }

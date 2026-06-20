@@ -1,3 +1,4 @@
+/** Pantalla de login/registro. Tras auth exitosa, AuthContext persiste el JWT y App redirige. */
 import { useState, useEffect } from 'react'
 import { authService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
@@ -6,13 +7,18 @@ import { LuMail, LuLock, LuUser, LuPhone, LuPackage, LuArrowRight, LuBell } from
 
 type Mode = 'login' | 'register'
 
-export default function AuthPage() {
+interface Props {
+  onBack?: () => void
+}
+
+export default function AuthPage({ onBack }: Props) {
   const { login } = useAuth()
   const [mode, setMode] = useState<Mode>('login')
   const [form, setForm] = useState({ email: '', password: '', name: '', whatsappNumber: '' })
   const [busy, setBusy] = useState(false)
   const [maintenanceOn, setMaintenanceOn] = useState(false)
 
+  // Consulta pública (sin JWT) para mostrar aviso antes de intentar login
   useEffect(() => {
     authService
       .maintenanceStatus()
@@ -42,6 +48,15 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-pearl to-white px-4 py-8">
       <div className="w-full max-w-md">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-6 text-sm text-slate-500 hover:text-brand-600 transition-colors"
+          >
+            ← Volver al inicio
+          </button>
+        )}
 
         {/* logo */}
         <div className="text-center mb-8">

@@ -9,15 +9,17 @@ import type {
   Supplier, CreateSupplierRequest, PurchasesPage,
   RotationReport, InventoryReport, ExecutiveDashboard,
   Category, CreateCategoryRequest,
+  MeasureUnit, CreateMeasureUnitRequest, ProductUom, ProductUomInput,
 } from '@/types'
 
 export const API_PREFIX = '/api'
 
+// VITE_API_BASE_URL en .env (ej. http://localhost:8080). Sin valor en dev → proxy de Vite (/api → :8080).
 function resolveOrigin(): string {
-  if (import.meta.env.DEV) return ''
   const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
-  if (!raw) return ''
-  return raw.replace(/\/$/, '').replace(/\/api$/i, '')
+  if (raw) return raw.replace(/\/$/, '').replace(/\/api$/i, '')
+  if (import.meta.env.DEV) return ''
+  return ''
 }
 
 const http = axios.create({ baseURL: `${resolveOrigin()}${API_PREFIX}` })
@@ -38,6 +40,7 @@ http.interceptors.response.use(
       const msg = err.response?.data?.error as string | undefined
       console.warn('[API 403]', err.config?.url, msg ?? 'Sin permiso')
     }
+    // Token expirado o inválido: forzar re-login (recarga completa para limpiar estado React)
     if (err.response?.status === 401) {
       localStorage.removeItem('shs_token')
       localStorage.removeItem('shs_user')
@@ -47,6 +50,7 @@ http.interceptors.response.use(
   }
 )
 
+// Patrón pub/sub: App.tsx se suscribe para mostrar pantalla de mantenimiento
 const maintenance503Listeners = new Set<() => void>()
 export function onMaintenance503(callback: () => void) {
   maintenance503Listeners.add(callback)
@@ -110,6 +114,19 @@ export const productService = {
     http.post(`products/${id}/adjust`, data).then(r => r.data),
   addAlias: (id: string, alias: string) =>
     http.post(`products/${id}/aliases`, { alias }).then(r => r.data),
+  listUoms: (id: string): Promise<ProductUom[]> =>
+    http.get(`products/${id}/uoms`).then(r => r.data),
+  replaceUoms: (id: string, items: ProductUomInput[]): Promise<ProductUom[]> =>
+    http.put(`products/${id}/uoms`, { items }).then(r => r.data),
+}
+
+export const measureUnitService = {
+  list: (): Promise<MeasureUnit[]> => http.get('measure-units').then(r => r.data),
+  create: (data: CreateMeasureUnitRequest): Promise<MeasureUnit> =>
+    http.post('measure-units', data).then(r => r.data),
+  update: (id: string, data: { name?: string; active?: boolean }): Promise<MeasureUnit> =>
+    http.patch(`measure-units/${id}`, data).then(r => r.data),
+  delete: (id: string): Promise<void> => http.delete(`measure-units/${id}`).then(() => undefined),
 }
 
 export const supplierService = {
