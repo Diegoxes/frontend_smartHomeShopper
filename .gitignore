@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Variables de entorno (secretos locales)
+.env
+.env.*
+!.env.example
+
+# Logs y caché
+*.log
+npm-debug.log*
+.vite/
+coverage/
+
+# IDE / Cursor
+.cursor/
+.vscode/
+*.swp
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
