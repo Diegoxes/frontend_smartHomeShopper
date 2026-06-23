@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
-import { LuClock, LuXCircle, LuRefreshCw, LuLogOut } from 'react-icons/lu'
+import { LuClock, LuCircleX, LuRefreshCw, LuLogOut } from 'react-icons/lu'
 
 export default function PendingApprovalPage() {
   const { user, logout, refreshUser } = useAuth()
@@ -31,7 +31,7 @@ export default function PendingApprovalPage() {
           rejected ? 'bg-red-100' : 'bg-amber-100'
         }`}>
           {rejected
-            ? <LuXCircle className="w-8 h-8 text-red-600" />
+            ? <LuCircleX className="w-8 h-8 text-red-600" />
             : <LuClock className="w-8 h-8 text-amber-600" />
           }
         </div>
