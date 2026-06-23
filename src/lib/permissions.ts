@@ -51,6 +51,11 @@ export function modulePerm(user: AuthUser | null, key: string): ModulePermission
     return emptyPerm(key)
   }
 
+  // Org pendiente o rechazada: sin permisos operativos
+  if (user.orgStatus && user.orgStatus !== 'ACTIVE') {
+    return emptyPerm(key)
+  }
+
   const fromApi = user.permissions?.find(p => p.key === key)
   if (fromApi) return fromApi
   return defaultPermForOrgRole(user.orgRole, key) ?? emptyPerm(key)

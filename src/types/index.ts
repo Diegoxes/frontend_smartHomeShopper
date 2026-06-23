@@ -25,6 +25,8 @@ export interface RegisterRequest {
   whatsappNumber?: string
 }
 
+export type OrgStatus = 'PENDING' | 'ACTIVE' | 'REJECTED'
+
 export interface AuthResponse {
   token: string
   userId: string
@@ -34,6 +36,7 @@ export interface AuthResponse {
   platformRole?: string | null
   orgRole?: string | null
   orgId?: string | null
+  orgStatus?: OrgStatus | null
   needsOnboarding?: boolean
   permissions: ModulePermission[]
 }
@@ -48,6 +51,7 @@ export interface AuthUser {
   platformRole?: string | null
   orgRole?: string | null
   orgId?: string | null
+  orgStatus?: OrgStatus | null
   needsOnboarding?: boolean
   permissions: ModulePermission[]
 }
@@ -111,6 +115,19 @@ export interface PlatformOrganizationRow {
   memberCount: number
   maxMembers: number
   createdAt?: string
+}
+
+/** Solicitud de onboarding pendiente de aprobación (vista PLATFORM_OWNER) */
+export interface PendingOrgDto {
+  orgId: string
+  orgName: string
+  industry?: string
+  country?: string
+  orgStatus: OrgStatus
+  createdAt?: string
+  managerUserId?: string
+  managerName?: string
+  managerEmail?: string
 }
 
 export interface PlatformUserRow {

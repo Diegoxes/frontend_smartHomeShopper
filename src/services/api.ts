@@ -5,7 +5,7 @@ import type {
   Product, Dashboard, ProductMovement,
   RbacMatrixResponse, RoleModuleCellDto, AdminUserRowDto, AdminCreateUserRequest,
   OnboardingRequest, OrganizationDto, OrgMemberDto, CreateOrgMemberRequest,
-  PlatformOrganizationRow, PlatformUserRow,
+  PlatformOrganizationRow, PlatformUserRow, PendingOrgDto,
   Supplier, CreateSupplierRequest, PurchasesPage,
   RotationReport, InventoryReport, ExecutiveDashboard,
   Category, CreateCategoryRequest,
@@ -166,6 +166,10 @@ export const adminService = {
   getMaintenance: (): Promise<{ enabled: boolean }> => http.get('admin/maintenance').then(r => r.data),
   setMaintenance: (enabled: boolean): Promise<void> =>
     http.put('admin/maintenance', { enabled }).then(() => undefined),
+  listOrganizations: (status = 'PENDING'): Promise<PendingOrgDto[]> =>
+    http.get('admin/organizations', { params: { status } }).then(r => r.data),
+  reviewOrganization: (orgId: string, action: 'APPROVE' | 'REJECT'): Promise<void> =>
+    http.post(`admin/organizations/${orgId}/review`, { action }).then(() => undefined),
 }
 
 export const categoryService = {

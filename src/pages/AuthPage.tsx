@@ -85,6 +85,9 @@ export default function AuthPage({ onBack }: Props) {
             {(['login', 'register'] as Mode[]).map(m => (
               <button
                 key={m}
+                type="button"
+                data-testid={m === 'login' ? 'tab-login' : 'tab-register'}
+                aria-selected={mode === m}
                 onClick={() => setMode(m)}
                 className={[
                   'flex-1 py-2.5 text-sm rounded-lg transition-all font-semibold',
@@ -96,7 +99,7 @@ export default function AuthPage({ onBack }: Props) {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="auth-form">
             {mode === 'register' && (
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1.5">Nombre completo</label>
@@ -155,7 +158,12 @@ export default function AuthPage({ onBack }: Props) {
                 </div>
               </div>
             )}
-            <button type="submit" disabled={busy} className="btn-primary w-full mt-6 py-3 text-base">
+            <button
+              type="submit"
+              disabled={busy}
+              data-testid={mode === 'login' ? 'btn-login' : 'btn-register'}
+              className="btn-primary w-full mt-6 py-3 text-base"
+            >
               {busy ? 'Cargando...' : mode === 'login' ? (
                 <>
                   Entrar

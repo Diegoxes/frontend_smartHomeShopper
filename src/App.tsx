@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar'
 import LandingPage from '@/pages/LandingPage'
 import AuthPage from '@/pages/AuthPage'
 import OnboardingPage from '@/pages/OnboardingPage'
+import PendingApprovalPage from '@/pages/PendingApprovalPage'
 import DashboardPage from '@/pages/DashboardPage'
 import InventoryPage from '@/pages/InventoryPage'
 import AlertsPage from '@/pages/AlertsPage'
@@ -84,6 +85,9 @@ export default function App() {
     return <AuthPage onBack={() => setGuestView('landing')} />
   }
   if (needsOnboarding) return <OnboardingPage />
+  if (user?.orgStatus === 'PENDING' || user?.orgStatus === 'REJECTED') {
+    return <PendingApprovalPage />
+  }
   if (blockedByMaintenance && !isPlatformOwner(user)) {
     return <MaintenanceBlockScreen onLogout={logout} />
   }

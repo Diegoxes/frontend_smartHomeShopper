@@ -25,7 +25,7 @@ export default function OnboardingPage() {
     try {
       const res = await organizationService.onboard(form)
       login(res)
-      toast.success('¡Negocio configurado!')
+      toast.success('Solicitud enviada. Te avisaremos cuando sea aprobada.')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       toast.error(msg || 'No se pudo completar el onboarding')
@@ -144,9 +144,9 @@ export default function OnboardingPage() {
 
             <div className="pt-4">
               <button type="submit" className="btn-primary w-full py-3 text-base" disabled={busy}>
-                {busy ? 'Guardando...' : (
+                {busy ? 'Enviando...' : (
                   <>
-                    Continuar al panel
+                    Enviar solicitud
                     <LuArrowRight className="w-5 h-5" />
                   </>
                 )}

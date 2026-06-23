@@ -19,7 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 // Normaliza la respuesta del backend al shape AuthUser usado en toda la UI
-function toAuthUser(res: AuthResponse | { userId: string; name: string; email: string; role: UserRole; permissions?: ModulePermission[]; platformRole?: string | null; orgRole?: string | null; orgId?: string | null; needsOnboarding?: boolean }): AuthUser {
+function toAuthUser(res: AuthResponse | { userId: string; name: string; email: string; role: UserRole; permissions?: ModulePermission[]; platformRole?: string | null; orgRole?: string | null; orgId?: string | null; orgStatus?: string | null; needsOnboarding?: boolean }): AuthUser {
   return {
     id: res.userId,
     name: res.name,
@@ -28,6 +28,7 @@ function toAuthUser(res: AuthResponse | { userId: string; name: string; email: s
     platformRole: res.platformRole,
     orgRole: res.orgRole,
     orgId: res.orgId,
+    orgStatus: res.orgStatus as AuthUser['orgStatus'],
     needsOnboarding: res.needsOnboarding,
     permissions: res.permissions ?? [],
   }
@@ -48,6 +49,7 @@ function parseStoredUser(): AuthUser | null {
           platformRole: parsed.platformRole,
           orgRole: parsed.orgRole,
           orgId: parsed.orgId,
+          orgStatus: parsed.orgStatus,
           needsOnboarding: parsed.needsOnboarding,
           permissions: parsed.permissions ?? [],
         }
