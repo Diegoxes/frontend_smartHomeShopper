@@ -26,8 +26,8 @@ const http = axios.create({ baseURL: `${resolveOrigin()}${API_PREFIX}` })
 
 http.interceptors.request.use(cfg => {
   const token = localStorage.getItem('shs_token')
-  if (token) cfg.headers!.Authorization = `Bearer ${token}`
-  return cfg
+  if (token) cfg.headers!.Authorization = `Bearer ${token}`//Si token existe lo agrega al encabezado de HTTP
+  return cfg //devuelve la confi. modificada
 })
 
 http.interceptors.response.use(
