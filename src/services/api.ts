@@ -22,7 +22,9 @@ function resolveOrigin(): string {
   return ''
 }
 
-const http = axios.create({ baseURL: `${resolveOrigin()}${API_PREFIX}` })
+const http = axios.create({ baseURL: `${resolveOrigin()}${API_PREFIX}` })// se crear una instancia personalizada Axios baseURL
+// Concatena dinámicamente el dominio y el prefijo de API.
+// http -> se usa en toda la app para hacer requests sin repetir la URL ni headers.
 
 http.interceptors.request.use(cfg => {
   const token = localStorage.getItem('shs_token')
@@ -33,15 +35,15 @@ http.interceptors.request.use(cfg => {
 http.interceptors.response.use(
   r => r,
   err => {
-    if (err.response?.status === 503) {
-      maintenance503Listeners.forEach(fn => { try { fn() } catch { /* noop */ } })
+    if (err.response?.status === 503) {//En mantenimiento
+      maintenance503Listeners.forEach(fn => { try { fn() } catch { /* noop */ } })//recorre lista de funciones registradas
     }
-    if (err.response?.status === 403) {
+    if (err.response?.status === 403) {//Prohibido o sin permiso
       const msg = err.response?.data?.error as string | undefined
       console.warn('[API 403]', err.config?.url, msg ?? 'Sin permiso')
     }
     // Token expirado o inválido: forzar re-login (recarga completa para limpiar estado React)
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401) {//No autenticado
       localStorage.removeItem('shs_token')
       localStorage.removeItem('shs_user')
       window.location.href = '/'
@@ -57,43 +59,44 @@ export function onMaintenance503(callback: () => void) {
   return () => { maintenance503Listeners.delete(callback) }
 }
 
-export const authService = {
-  login: (data: LoginRequest): Promise<AuthResponse> => http.post('auth/login', data).then(r => r.data),
-  register: (data: RegisterRequest): Promise<AuthResponse> => http.post('auth/register', data).then(r => r.data),
-  me: (): Promise<AuthMeResponse> => http.get('auth/me').then(r => r.data),
-  maintenanceStatus: (): Promise<{ enabled: boolean }> => http.get('auth/maintenance').then(r => r.data),
-  passwordReset: (email: string) => http.post('auth/password-reset', { email }).then(r => r.data),
+//
+export const authService = {// authService es un servicio de autenticación frontend
+  login: (data: LoginRequest): Promise<AuthResponse> => http.post('auth/login', data).then(r => r.data),//Inicia sesión, Retorno esperado: token y datos del usuario. recibe un objeto con los datos del login, recibe una promesa que resolverá con los datos de autenticación (token, user)
+  register: (data: RegisterRequest): Promise<AuthResponse> => http.post('auth/register', data).then(r => r.data),//Crea usuario, Retorno esperado: token y datos del usuario. Similar a login, pero para crear un nuevo usuario. RegisterRequest puede incluir: { email, password, nombre, apellido }.Devuelve la misma estructura que login (AuthResponse).
+  me: (): Promise<AuthMeResponse> => http.get('auth/me').then(r => r.data), // Info del usuario actual, Retorno esperado: datos del usuario logueado. Función sin parámetros. consulta la información del usuario actualmente logueado. AuthMeResponse → tipo esperado del backend, por ejemplo: { id: 1, email: 'user@example.com', roles: ['admin'] }
+  maintenanceStatus: (): Promise<{ enabled: boolean }> => http.get('auth/maintenance').then(r => r.data), //Consulta mantenimiento, Retorno esperado: { enabled: boolean }. Consulta si el sistema está en modo mantenimiento. Devuelve un objeto simple: { enabled: true } // o false. Útil para mostrar una pantalla de mantenimiento antes de permitir acciones del usuario.
+  passwordReset: (email: string) => http.post('auth/password-reset', { email }).then(r => r.data), //Solicita restablecimiento, Retorno esperado:mensaje de backend. Envía un correo para restablecer la contraseña. email → string con el correo del usuario. POST a auth/password-reset con payload: { email: "usuario@ejemplo.com" } y .then(r => r.data) → devuelve solo la respuesta del backend.
 }
 
-export const organizationService = {
-  onboard: (data: OnboardingRequest): Promise<AuthResponse> => http.post('organizations', data).then(r => r.data),
-  me: (): Promise<OrganizationDto> => http.get('organizations/me').then(r => r.data),
-  members: (): Promise<OrgMemberDto[]> => http.get('organizations/me/members').then(r => r.data),
+export const organizationService = { //objeto que agrupa todas las funciones relacionadas con organizaciones y sus miembros.
+  onboard: (data: OnboardingRequest): Promise<AuthResponse> => http.post('organizations', data).then(r => r.data),//Función para crear/registrar una nueva organización. Endpoint: POST /organizations. Retorno: AuthResponse
+  me: (): Promise<OrganizationDto> => http.get('organizations/me').then(r => r.data), //Info de la organización actual. Endpoint: GET /organizations/me. Retorno: OrganizationDto 
+  members: (): Promise<OrgMemberDto[]> => http.get('organizations/me/members').then(r => r.data), //Función Lista miembros. Endpoint: /organizations/me/members. Retorno: OrgMemberDto[]
   addMember: (data: CreateOrgMemberRequest): Promise<OrgMemberDto> =>
-    http.post('organizations/me/members', data).then(r => r.data),
+    http.post('organizations/me/members', data).then(r => r.data), //Función Agregar miembro. Endpoint: POST /organizations/me/members. Retorno: OrgMemberDto
   updateMember: (id: string, data: Partial<CreateOrgMemberRequest>): Promise<OrgMemberDto> =>
-    http.patch(`organizations/me/members/${id}`, data).then(r => r.data),
-  removeMember: (id: string): Promise<void> => http.delete(`organizations/me/members/${id}`).then(() => undefined),
+    http.patch(`organizations/me/members/${id}`, data).then(r => r.data), //Función Actualizar miembro. Endpoint: PATCH /organizations/me/members/:id. Retorno: OrgMemberDto
+  removeMember: (id: string): Promise<void> => http.delete(`organizations/me/members/${id}`).then(() => undefined), //Función para Eliminar miembro. Endpoint: DELETE /organizations/me/members/:id. Retorno: void
 }
 
-export const platformService = {
-  organizations: (): Promise<PlatformOrganizationRow[]> => http.get('platform/organizations').then(r => r.data),
-  users: (): Promise<PlatformUserRow[]> => http.get('platform/users').then(r => r.data),
+export const platformService = {// objeto que agrupa funciones para administrar la plataforma, como organizaciones y usuarios.
+  organizations: (): Promise<PlatformOrganizationRow[]> => http.get('platform/organizations').then(r => r.data),//Lista organizaciones. Endpoint: GET /platform/organizations. Retorno: PlatformOrganizationRow[]
+  users: (): Promise<PlatformUserRow[]> => http.get('platform/users').then(r => r.data),//Lista usuarios. Endpoint: GET /platform/users. Retorno: PlatformUserRow[]
   setMaxMembers: (orgId: string, maxMembers: number) =>
-    http.patch(`platform/organizations/${orgId}/max-members`, { maxMembers }).then(r => r.data),
+    http.patch(`platform/organizations/${orgId}/max-members`, { maxMembers }).then(r => r.data),//Actualiza máximo de miembros. Endpoint: PATCH /platform/organizations/:orgId/max-members. Retorno: Datos de la organización actualizada
 }
 
-export const dashboardService = {
-  get: (): Promise<Dashboard> => http.get('dashboard').then(r => r.data),
-  executive: (): Promise<ExecutiveDashboard> => http.get('dashboard/executive').then(r => r.data),
+export const dashboardService = {//objeto que agrupa todas las funciones relacionadas con el dashboard de la aplicación.
+  get: (): Promise<Dashboard> => http.get('dashboard').then(r => r.data), //Dashboard general. Endpoint: GET /dashboard. Retorno: Dashboard
+  executive: (): Promise<ExecutiveDashboard> => http.get('dashboard/executive').then(r => r.data),//Dashboard ejecutivo. Endpoint: GET /dashboard/executive. Retorno: ExecutiveDashboard
 }
 
-export interface ProductFilters {
-  lowStock?: boolean
-  expiringSoon?: boolean
-  stagnantDays?: number
-  category?: string
-  q?: string
+export interface ProductFilters {//tipado de objeto, se defina de forma estructura de un objeto.
+  lowStock?: boolean      //obejtos con stock bajo
+  expiringSoon?: boolean //producto está próximo a vencer.
+  stagnantDays?: number //número de días que el producto no se ha vendido.
+  category?: string     //categoría del producto (ej. “bebidas”, “lácteos”).
+  q?: string           // texto de búsqueda libre (query), por ejemplo para filtrar por nombre.
 }
 
 export const productService = {

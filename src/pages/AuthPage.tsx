@@ -29,8 +29,21 @@ export default function AuthPage({ onBack }: Props) {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
+  const validateForm = () => {
+    const emailRegex = /^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (!emailRegex.test(form.email)) {
+      toast.error('El correo debe comenzar con una letra y tener un formato válido XD.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    //if (!validateForm()) return;
+
     setBusy(true)
     try {
       const res = mode === 'login'
