@@ -14,7 +14,16 @@ import type {
 
 export const API_PREFIX = '/api'
 
-// VITE_API_BASE_URL en .env (ej. http://localhost:8080). Sin valor en dev → proxy de Vite (/api → :8080).
+/**
+ * Origen del API Gateway (único punto de entrada a los microservicios).
+ * VITE_API_BASE_URL = URL del gateway SIN /api (ej. http://localhost:8080).
+ *
+ * Enrutamiento interno del gateway:
+ *   /api/auth/**     → identity-service
+ *   /api/reports/**  → reporting-service
+ *   /api/webhook/**  → whatsapp-service
+ *   resto /api/**    → inventory-core
+ */
 function resolveOrigin(): string {
   const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
   if (raw) return raw.replace(/\/$/, '').replace(/\/api$/i, '')

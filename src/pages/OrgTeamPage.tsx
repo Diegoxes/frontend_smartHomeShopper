@@ -4,6 +4,7 @@ import { organizationService } from '@/services/api'
 import type { OrgMemberDto } from '@/types'
 import toast from 'react-hot-toast'
 import { LuUsers, LuUserPlus, LuShield, LuTrash2, LuMail, LuUser, LuLock, LuX } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 export default function OrgTeamPage() {
   const [members, setMembers] = useState<OrgMemberDto[]>([])
@@ -73,8 +74,10 @@ export default function OrgTeamPage() {
                   className="input pl-10" 
                   placeholder="Juan Pérez" 
                   value={form.name} 
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
-                  required 
+                  onChange={e => setForm(f => ({ ...f, name: singleLineMax(e.target.value, FIELD_LIMITS.personName.max) }))} 
+                  required
+                  minLength={FIELD_LIMITS.personName.min}
+                  maxLength={FIELD_LIMITS.personName.max}
                 />
               </div>
             </div>
@@ -87,8 +90,9 @@ export default function OrgTeamPage() {
                   placeholder="juan@empresa.com" 
                   type="email" 
                   value={form.email} 
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))} 
-                  required 
+                  onChange={e => setForm(f => ({ ...f, email: singleLineMax(e.target.value, FIELD_LIMITS.email.max) }))} 
+                  required
+                  maxLength={FIELD_LIMITS.email.max}
                 />
               </div>
             </div>
@@ -101,8 +105,10 @@ export default function OrgTeamPage() {
                   placeholder="Mínimo 6 caracteres" 
                   type="password" 
                   value={form.password} 
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))} 
-                  required 
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value.slice(0, FIELD_LIMITS.password.max) }))} 
+                  required
+                  minLength={FIELD_LIMITS.password.min}
+                  maxLength={FIELD_LIMITS.password.max}
                 />
               </div>
             </div>

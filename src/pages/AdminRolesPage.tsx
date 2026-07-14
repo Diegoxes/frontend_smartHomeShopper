@@ -22,6 +22,7 @@ import {
   LuKey,
   LuBuilding2,
 } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax, sanitizeWhatsApp, WHATSAPP_INPUT_PATTERN } from '@/lib/formValidation'
 
 const ORG_ROLE_NAMES = new Set(['MANAGER', 'MEMBER', 'VIEWER'])
 
@@ -279,8 +280,10 @@ export default function AdminRolesPage() {
                 className="input pl-10"
                 placeholder="Juan Pérez"
                 value={createForm.name}
-                onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                onChange={e => setCreateForm(f => ({ ...f, name: singleLineMax(e.target.value, FIELD_LIMITS.personName.max) }))}
                 required
+                minLength={FIELD_LIMITS.personName.min}
+                maxLength={FIELD_LIMITS.personName.max}
               />
             </div>
           </div>
@@ -293,8 +296,9 @@ export default function AdminRolesPage() {
                 type="email"
                 placeholder="juan@empresa.com"
                 value={createForm.email}
-                onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                onChange={e => setCreateForm(f => ({ ...f, email: singleLineMax(e.target.value, FIELD_LIMITS.email.max) }))}
                 required
+                maxLength={FIELD_LIMITS.email.max}
               />
             </div>
           </div>
@@ -306,9 +310,10 @@ export default function AdminRolesPage() {
                 className="input pl-10"
                 type="password"
                 placeholder="Mínimo 6 caracteres"
-                minLength={6}
+                minLength={FIELD_LIMITS.password.min}
+                maxLength={FIELD_LIMITS.password.max}
                 value={createForm.password}
-                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                onChange={e => setCreateForm(f => ({ ...f, password: e.target.value.slice(0, FIELD_LIMITS.password.max) }))}
                 required
               />
             </div>
@@ -381,9 +386,13 @@ export default function AdminRolesPage() {
             <label className="text-xs font-semibold text-slate-600 block mb-1.5">WhatsApp (opcional)</label>
             <input
               className="input"
+              type="tel"
               placeholder="+51999999999"
               value={createForm.whatsappNumber}
-              onChange={e => setCreateForm(f => ({ ...f, whatsappNumber: e.target.value }))}
+              onChange={e => setCreateForm(f => ({ ...f, whatsappNumber: sanitizeWhatsApp(e.target.value) }))}
+              maxLength={FIELD_LIMITS.whatsapp.max}
+              pattern={WHATSAPP_INPUT_PATTERN}
+              title="Formato: +51999999999 (7 a 19 dígitos)"
             />
           </div>
           <div className="sm:col-span-2">

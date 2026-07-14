@@ -4,6 +4,7 @@ import { authService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 import { LuMail, LuLock, LuUser, LuPhone, LuPackage, LuArrowRight, LuBell } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax, sanitizeWhatsApp, WHATSAPP_INPUT_PATTERN } from '@/lib/formValidation'
 
 type Mode = 'login' | 'register'
 
@@ -26,8 +27,14 @@ export default function AuthPage({ onBack }: Props) {
       .catch(() => {})
   }, [])
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }))
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value
+    if (k === 'name') value = singleLineMax(value, FIELD_LIMITS.personName.max)
+    if (k === 'email') value = singleLineMax(value, FIELD_LIMITS.email.max)
+    if (k === 'password') value = value.slice(0, FIELD_LIMITS.password.max)
+    if (k === 'whatsappNumber') value = sanitizeWhatsApp(value)
+    setForm(f => ({ ...f, [k]: value }))
+  }
 
   const validateForm = () => {
     const emailRegex = /^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -123,7 +130,10 @@ export default function AuthPage({ onBack }: Props) {
                     placeholder="Juan Pérez" 
                     value={form.name} 
                     onChange={set('name')} 
-                    required 
+                    required
+                    minLength={FIELD_LIMITS.personName.min}
+                    maxLength={FIELD_LIMITS.personName.max}
+                    title={`Entre ${FIELD_LIMITS.personName.min} y ${FIELD_LIMITS.personName.max} caracteres`}
                   />
                 </div>
               </div>
@@ -138,7 +148,8 @@ export default function AuthPage({ onBack }: Props) {
                   placeholder="tu@empresa.com" 
                   value={form.email} 
                   onChange={set('email')} 
-                  required 
+                  required
+                  maxLength={FIELD_LIMITS.email.max}
                 />
               </div>
             </div>
@@ -153,7 +164,8 @@ export default function AuthPage({ onBack }: Props) {
                   value={form.password} 
                   onChange={set('password')} 
                   required 
-                  minLength={6} 
+                  minLength={FIELD_LIMITS.password.min}
+                  maxLength={FIELD_LIMITS.password.max}
                 />
               </div>
             </div>
@@ -164,9 +176,13 @@ export default function AuthPage({ onBack }: Props) {
                   <LuPhone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     className="input pl-10" 
+                    type="tel"
                     placeholder="+51999999999" 
                     value={form.whatsappNumber} 
-                    onChange={set('whatsappNumber')} 
+                    onChange={set('whatsappNumber')}
+                    maxLength={FIELD_LIMITS.whatsapp.max}
+                    pattern={WHATSAPP_INPUT_PATTERN}
+                    title="Formato: +51999999999 (7 a 19 dígitos)"
                   />
                 </div>
               </div>

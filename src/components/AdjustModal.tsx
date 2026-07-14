@@ -5,6 +5,7 @@ import { useConsumeProduct, useRestockProduct } from '@/hooks/useProducts'
 import { measureUnitService, supplierService } from '@/services/api'
 import type { Supplier } from '@/types'
 import { LuX, LuMinus, LuPlus, LuDollarSign, LuStore, LuFileText } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 interface Props {
   product: Product
@@ -195,7 +196,7 @@ export default function AdjustModal({ product, mode, onClose }: Props) {
               <LuFileText className="w-3.5 h-3.5" />
               Nota (opcional)
             </label>
-            <input className="input" placeholder="Agregar una nota..." value={note} onChange={e => setNote(e.target.value)} />
+            <input className="input" placeholder="Agregar una nota..." value={note} onChange={e => setNote(singleLineMax(e.target.value, FIELD_LIMITS.note.max))} maxLength={FIELD_LIMITS.note.max} />
           </div>
         </div>
 

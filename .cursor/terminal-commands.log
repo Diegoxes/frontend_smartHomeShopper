@@ -1,3 +1,6 @@
 2026-06-22 17:43:52 | Instalar Vitest y Testing Library | npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event
 2026-06-22 17:43:52 | Ejecutar tests frontend Vitest | npm test
 2026-06-23 10:54:49 | Tests Vitest frontend | npm test -- --run
+2026-06-23 10:57:11 | Quitar node_modules del índice git | git rm -r --cached node_modules
+2026-06-23 11:02:08 | Fix Vitest y push frontend | npm install && git push origin main
+2026-06-23 18:15:34 | Tests frontend tras validaciones | npm test -- --run

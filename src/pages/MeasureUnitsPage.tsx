@@ -4,6 +4,7 @@ import { measureUnitService } from '@/services/api'
 import type { MeasureUnit } from '@/types'
 import toast from 'react-hot-toast'
 import { LuRuler, LuPlus, LuTrash2 } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 export default function MeasureUnitsPage() {
   const [items, setItems] = useState<MeasureUnit[]>([])
@@ -45,8 +46,26 @@ export default function MeasureUnitsPage() {
       <form onSubmit={create} className="card p-6 mb-8">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Agregar unidad</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input className="input" placeholder="Código (ej. BLISTER)" value={code} onChange={e => setCode(e.target.value)} required />
-          <input className="input" placeholder="Nombre (ej. Blíster)" value={name} onChange={e => setName(e.target.value)} required />
+          <input
+            className="input"
+            placeholder="Código (ej. BLISTER)"
+            value={code}
+            onChange={e => setCode(singleLineMax(e.target.value, FIELD_LIMITS.measureCode.max).toUpperCase())}
+            required
+            minLength={FIELD_LIMITS.measureCode.min}
+            maxLength={FIELD_LIMITS.measureCode.max}
+            pattern="[A-Z0-9_]+"
+            title="Solo letras, números y guion bajo"
+          />
+          <input
+            className="input"
+            placeholder="Nombre (ej. Blíster)"
+            value={name}
+            onChange={e => setName(singleLineMax(e.target.value, FIELD_LIMITS.measureName.max))}
+            required
+            minLength={FIELD_LIMITS.measureName.min}
+            maxLength={FIELD_LIMITS.measureName.max}
+          />
           <button type="submit" className="btn-primary">
             <LuPlus className="w-4 h-4" />
             Agregar

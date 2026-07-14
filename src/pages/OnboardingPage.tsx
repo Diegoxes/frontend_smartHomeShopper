@@ -7,6 +7,7 @@ import { organizationService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 import { LuBuilding2, LuBriefcase, LuDollarSign, LuGlobe, LuArrowRight, LuCheck } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 export default function OnboardingPage() {
   const { login } = useAuth()
@@ -84,8 +85,11 @@ export default function OnboardingPage() {
                 className="input text-base" 
                 placeholder="Ej: Mi Empresa S.A."
                 value={form.name} 
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
-                required 
+                onChange={e => setForm(f => ({ ...f, name: singleLineMax(e.target.value, FIELD_LIMITS.orgName.max) }))} 
+                required
+                minLength={FIELD_LIMITS.orgName.min}
+                maxLength={FIELD_LIMITS.orgName.max}
+                title={`Entre ${FIELD_LIMITS.orgName.min} y ${FIELD_LIMITS.orgName.max} caracteres`}
                 autoFocus
               />
             </div>
@@ -102,7 +106,8 @@ export default function OnboardingPage() {
                 className="input" 
                 placeholder="Ej: Ferretería, Farmacia, Restaurante, Bodega"
                 value={form.industry} 
-                onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} 
+                onChange={e => setForm(f => ({ ...f, industry: singleLineMax(e.target.value, FIELD_LIMITS.industry.max) }))}
+                maxLength={FIELD_LIMITS.industry.max}
               />
             </div>
 

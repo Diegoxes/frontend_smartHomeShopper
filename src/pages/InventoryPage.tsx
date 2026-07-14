@@ -13,6 +13,7 @@ import AdjustModal from '@/components/AdjustModal'
 import { MOD, modulePerm } from '@/lib/permissions'
 import type { ModalState } from '@/types'
 import { LuPlus, LuSearch, LuFilter, LuPackage, LuBell, LuCalendar } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 export default function InventoryPage() {
   const { user } = useAuth()
@@ -78,7 +79,8 @@ export default function InventoryPage() {
               className="input pl-10 w-full" 
               placeholder="Buscar SKU, código de barras o nombre..." 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
+              onChange={e => setSearch(singleLineMax(e.target.value, FIELD_LIMITS.searchQuery.max))}
+              maxLength={FIELD_LIMITS.searchQuery.max}
             />
           </div>
           <select 

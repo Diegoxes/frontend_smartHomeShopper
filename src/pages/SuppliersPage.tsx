@@ -4,6 +4,7 @@ import { supplierService } from '@/services/api'
 import type { Supplier } from '@/types'
 import toast from 'react-hot-toast'
 import { LuStore, LuPlus, LuPhone, LuMail, LuMapPin } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 export default function SuppliersPage() {
   const [items, setItems] = useState<Supplier[]>([])
@@ -42,8 +43,10 @@ export default function SuppliersPage() {
               className="input pl-10 w-full" 
               placeholder="Nombre del proveedor" 
               value={name} 
-              onChange={e => setName(e.target.value)} 
-              required 
+              onChange={e => setName(singleLineMax(e.target.value, FIELD_LIMITS.supplierName.max))} 
+              required
+              minLength={FIELD_LIMITS.supplierName.min}
+              maxLength={FIELD_LIMITS.supplierName.max}
             />
           </div>
           <button type="submit" className="btn-primary">

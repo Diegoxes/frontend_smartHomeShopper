@@ -6,6 +6,7 @@ import { unitSelectOptions } from '@/types'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
 import { categoryService, supplierService, measureUnitService, productService } from '@/services/api'
 import { LuX, LuSave, LuPackage, LuBarcode, LuTag, LuCalendar, LuPlus, LuDollarSign, LuStore } from 'react-icons/lu'
+import { FIELD_LIMITS, singleLineMax } from '@/lib/formValidation'
 
 interface Props {
   product?: Product
@@ -101,8 +102,13 @@ export default function ProductModal({ product, onClose }: Props) {
     },
   })
 
-  const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm(f => ({ ...f, [key]: e.target.value }))
+  const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    let value = e.target.value
+    if (key === 'sku') value = singleLineMax(value, FIELD_LIMITS.sku.max)
+    if (key === 'name') value = singleLineMax(value, FIELD_LIMITS.productName.max)
+    if (key === 'barcode') value = singleLineMax(value.replace(/\s/g, ''), FIELD_LIMITS.barcode.max)
+    setForm(f => ({ ...f, [key]: value }))
+  }
 
   const handleCreateCategory = () => {
     if (!newCategoryName.trim()) return
@@ -180,7 +186,9 @@ export default function ProductModal({ product, onClose }: Props) {
                     placeholder="Ej: LEC-001" 
                     value={form.sku} 
                     onChange={set('sku')} 
-                    required 
+                    required
+                    minLength={FIELD_LIMITS.sku.min}
+                    maxLength={FIELD_LIMITS.sku.max}
                     disabled={!!product} 
                   />
                 </div>
@@ -192,7 +200,9 @@ export default function ProductModal({ product, onClose }: Props) {
                   placeholder="Ej: Leche entera 1L" 
                   value={form.name} 
                   onChange={set('name')} 
-                  required 
+                  required
+                  minLength={FIELD_LIMITS.productName.min}
+                  maxLength={FIELD_LIMITS.productName.max}
                 />
               </div>
               <div>
@@ -201,7 +211,8 @@ export default function ProductModal({ product, onClose }: Props) {
                   className="input" 
                   placeholder="Ej: 7501234567890" 
                   value={form.barcode} 
-                  onChange={set('barcode')} 
+                  onChange={set('barcode')}
+                  maxLength={FIELD_LIMITS.barcode.max}
                 />
               </div>
             </div>
@@ -339,8 +350,11 @@ export default function ProductModal({ product, onClose }: Props) {
                       className="input flex-1"
                       placeholder="Ej: Lácteos, Electricidad, Medicamentos..."
                       value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onChange={(e) => setNewCategoryName(singleLineMax(e.target.value, FIELD_LIMITS.categoryName.max))}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
+                      required={showNewCategory}
+                      minLength={FIELD_LIMITS.categoryName.min}
+                      maxLength={FIELD_LIMITS.categoryName.max}
                       autoFocus
                     />
                     <button
